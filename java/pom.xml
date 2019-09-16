@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>co.arago</groupId>
+  <artifactId>hiro-client-all</artifactId>
+  <name>${project.artifactId}</name>
+  <packaging>pom</packaging>
+  <version>2.0.4-SNAPSHOT</version>
+
+  <properties>
+    <maven.exec.skip>false</maven.exec.skip>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <async-http-client-version>2.4.4</async-http-client-version>
+    <jcommander-version>1.72</jcommander-version>
+    <json-smart-version>1.3.1</json-smart-version>
+    <commons-io-version>2.6</commons-io-version>
+    <commons-lang-version>2.6</commons-lang-version>
+    <commons-codec-version>1.10</commons-codec-version>
+    <snakeyaml-version>1.19</snakeyaml-version>
+    <slf4j-version>1.7.25</slf4j-version>
+    <zookeeper-version>3.4.10</zookeeper-version>
+    <javaee-web-api-version>7.0</javaee-web-api-version>
+    <log4j-version>1.2.16</log4j-version>
+    <!-- override parent -->
+    <hiro-client-version>2.0.4-SNAPSHOT</hiro-client-version>
+    <hiro-admin-client-version>2.0.4-SNAPSHOT</hiro-admin-client-version>
+    <hiro-action-client-version>2.0.4-SNAPSHOT</hiro-action-client-version>
+    <!-- groovy stuff below -->
+    <commons-cli-version>1.4</commons-cli-version>
+    <groovy-version>2.5.5</groovy-version>
+    <groovy-gpars-version>1.2.1</groovy-gpars-version>
+  </properties>
+
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <modules>
+    <module>hiro-client</module>
+    <module>hiro-admin-client</module>
+    <module>hiro-cli-util</module>
+    <module>hiro-cli-common</module>
+    <module>hiro-action-client</module>
+  </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.20.1</version>
+        <configuration>
+          <reuseForks>false</reuseForks>
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <argLine>-Xms256m -Xmx512m</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.8.2</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-ssh</artifactId>
+            <version>2.10</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>cobertura-maven-plugin</artifactId>
+        <version>2.7</version>
+        <configuration>
+          <formats>
+            <format>xml</format>
+          </formats>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.0.2</version>
+        <configuration>
+          <encoding>${project.build.sourceEncoding}</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.6</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-ssh</artifactId>
+            <version>2.6</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+
+  <distributionManagement>
+    <repository>
+      <id>arago-private</id>
+      <uniqueVersion>false</uniqueVersion>
+      <name>arago Repository</name>
+      <url>https://nexus.arago.co/repository/arago-private</url>
+    </repository>
+    <snapshotRepository>
+      <id>arago-private</id>
+      <uniqueVersion>false</uniqueVersion>
+      <name>arago Repository</name>
+      <url>https://nexus.arago.co/repository/arago-private</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+</project>

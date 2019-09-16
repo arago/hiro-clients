@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>  
+  
+  <groupId>co.arago</groupId>
+  <artifactId>hiro-action-client</artifactId>
+  <name>${project.artifactId}</name>
+  <version>2.0.4-SNAPSHOT</version>
+  <parent>
+    <groupId>co.arago</groupId>
+    <artifactId>hiro-client-all</artifactId>
+    <version>2.0.4-SNAPSHOT</version>
+  </parent>
+
+  <properties>
+    <maven.exec.skip>false</maven.exec.skip>
+  </properties>
+  
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hiro-client</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- test stuff: -->
+    <dependency>
+      <groupId>org.nanohttpd</groupId>
+      <artifactId>nanohttpd</artifactId>
+      <version>2.2.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.5.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <skip>${maven.exec.skip}</skip>
+          <outputFile>${basedir}/src/main/resources/_hiro.version</outputFile>
+          <executable>git</executable>
+          <!-- optional -->
+          <arguments>
+            <argument>describe</argument>
+            <argument>--always</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
