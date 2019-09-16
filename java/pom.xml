@@ -44,9 +44,6 @@
 
   <modules>
     <module>hiro-client</module>
-    <module>hiro-admin-client</module>
-    <module>hiro-cli-util</module>
-    <module>hiro-cli-common</module>
     <module>hiro-action-client</module>
   </modules>
 

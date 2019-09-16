@@ -4,7 +4,26 @@ HIRO clients holds the official java clients for interacting with the APIs of HI
 
 **Status**
 
-- Technical Preview (6.1.0)
+- Technical Preview
+
+**Usage**
+
+Requires java8 and maven.
+
+    cd java
+    mvn clean install
+    
+and in your project's pom.xml add
+
+    <dependency>
+      <groupId>co.arago</groupId>
+      <artifactId>hiro-client</artifactId>
+      <version>${version}</version>
+    </dependency>
+    
+A good starting point is java/hiro-client/src/main/java/co/arago/hiro/client/Hiro.java
+
+    Hiro.newBuilder()/* options */.build();
 
 **Contributing**
 
