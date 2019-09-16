@@ -8,8 +8,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import static co.arago.hiro.client.util.Helper.notEmpty;
 import java.util.logging.Level;
 
-import static co.arago.hiro.client.auth.AbstractTokenProvider.DEFAULT_API_VERSION;
-
 /**
  *
  */
@@ -18,7 +16,6 @@ public final class TokenBuilder {
   private AsyncHttpClient client;
   private boolean trustAllCerts;
   private Level debugLevel = Level.OFF;
-  private String apiVersion = DEFAULT_API_VERSION;
 
   public TokenBuilder setClient(AsyncHttpClient client) {
     this.client = client;
@@ -37,17 +34,11 @@ public final class TokenBuilder {
     return this;
   }
 
-  public TokenBuilder setApiVersion(String version) {
-    this.apiVersion = version;
-
-    return this;
-  }
-
   public TokenProvider makeFixed(String token) {
     return new FixedTokenProvider(notEmpty(token, "token"));
   }
 
   public TokenProvider makePassword(String url, String clientId, String clientSecret, String userName, String password) {
-    return new PasswordTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel, notEmpty(clientId, "clientId"), notEmpty(clientSecret, "clientSecret"), notEmpty(userName, "userName"), notEmpty(password, "password"), notEmpty(apiVersion, "apiVErsion"));
+    return new PasswordTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel, notEmpty(clientId, "clientId"), notEmpty(clientSecret, "clientSecret"), notEmpty(userName, "userName"), notEmpty(password, "password"));
   }
 }

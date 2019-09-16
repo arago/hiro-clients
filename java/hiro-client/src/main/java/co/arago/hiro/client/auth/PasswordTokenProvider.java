@@ -19,23 +19,16 @@ public final class PasswordTokenProvider extends AbstractTokenProvider {
 
   public PasswordTokenProvider(String url, AsyncHttpClient client, boolean trustAllCerts,
     Level debugLevel,
-    String clientId, String clientSecret, String username, String password, String apiVersion) {
-    super(url, clientId, clientSecret, client, trustAllCerts, debugLevel, apiVersion);
+    String clientId, String clientSecret, String username, String password) {
+    super(url, clientId, clientSecret, client, trustAllCerts, debugLevel);
 
     this.user = notEmpty(username, USERNAME);
     this.pass = notEmpty(password, PASSWORD);
   }
 
-  public PasswordTokenProvider(String url, AsyncHttpClient client, boolean trustAllCerts,
-    Level debugLevel,
-    String clientId, String clientSecret, String username, String password) {
-    this(url, client, trustAllCerts, debugLevel, clientId, clientSecret, username, password, null);
-  }
-
-  public PasswordTokenProvider(String url, AsyncHttpClient client, boolean trustAllCerts,
-    String clientId, String clientSecret, String username, String password) {
+  public PasswordTokenProvider(String url, AsyncHttpClient client, boolean trustAllCerts, String clientId, String clientSecret, String username, String password) {
     this(url, client, trustAllCerts, null,
-      clientId, clientSecret, username, password, null);
+      clientId, clientSecret, username, password);
   }
 
   @Override

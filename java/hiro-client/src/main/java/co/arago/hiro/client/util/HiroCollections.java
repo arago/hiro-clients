@@ -27,7 +27,7 @@ public final class HiroCollections {
       throw new IllegalArgumentException("arguments need to be even");
     }
 
-    for (int i = 0, len = items.length - 1; i < len; i += 2) {
+    for (int i = 0, len = items.length - 1; i < len; ++i) {
       map.put(items[i], items[i + 1]);
     }
 
@@ -52,7 +52,7 @@ public final class HiroCollections {
 
   public static List newList(Iterable col) {
     final List ret = new ArrayList();
-    for (final Object o : col) {
+    for (final Object o: col) {
       ret.add(o);
     }
 

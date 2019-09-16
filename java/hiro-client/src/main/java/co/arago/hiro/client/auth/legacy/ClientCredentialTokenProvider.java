@@ -27,7 +27,7 @@ public final class ClientCredentialTokenProvider extends AbstractTokenProvider {
 
   @Override
   public boolean checkTokenRenewal(Response response) {
-    return false;
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override

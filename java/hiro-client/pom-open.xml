@@ -4,10 +4,9 @@
   <groupId>co.arago</groupId>
   <artifactId>hiro-client</artifactId>
   <name>${project.artifactId}</name>
-  <version>2.0.4-SNAPSHOT</version>
+  <version>1.6.6</version>
 
   <properties>
-    <maven.exec.skip>false</maven.exec.skip>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <async-http-client-version>2.4.4</async-http-client-version>
@@ -22,12 +21,10 @@
     <javaee-web-api-version>7.0</javaee-web-api-version>
     <log4j-version>1.2.16</log4j-version>
     <!-- override parent -->
-    <hiro-client-version>2.0.4-SNAPSHOT</hiro-client-version>
-    <hiro-admin-client-version>2.0.4-SNAPSHOT</hiro-admin-client-version>
-    <hiro-action-client-version>2.0.4-SNAPSHOT</hiro-action-client-version>
+    <hiro-client-version>1.6.2</hiro-client-version>
     <!-- groovy stuff below -->
     <commons-cli-version>1.4</commons-cli-version>
-    <groovy-version>2.5.5</groovy-version>
+    <groovy-version>2.4.13</groovy-version>
     <groovy-gpars-version>1.2.1</groovy-gpars-version>
   </properties>
 
@@ -74,7 +71,6 @@
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.nanohttpd</groupId>
       <artifactId>nanohttpd</artifactId>
@@ -141,17 +137,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.6</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-ssh</artifactId>
-            <version>2.6</version>
-          </dependency>
-        </dependencies>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.5.0</version>
@@ -173,6 +158,17 @@
             <argument>--always</argument>
           </arguments>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.6</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-ssh</artifactId>
+            <version>2.6</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>

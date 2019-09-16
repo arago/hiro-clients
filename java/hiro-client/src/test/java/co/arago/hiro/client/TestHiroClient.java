@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -36,7 +35,6 @@ import static org.junit.Assert.*;
  */
 public class TestHiroClient {
 
-  private static final Level logLevel = Level.SEVERE;
   static int port = 12345;
     static FakeHiroServer server;
     private final String testApiURL;
@@ -45,9 +43,7 @@ public class TestHiroClient {
     public TestHiroClient() {
       testApiURL = "http://127.0.0.1:" + Integer.toString(port);
 
-      client = new ClientBuilder().setRestApiUrl(testApiURL)
-        .setDebugRest(logLevel)
-        .setTokenProvider(new TokenBuilder().makeFixed("52f5ae960afdfdde8459a7f414739d7")).setTrustAllCerts(true).makeHiroClient();
+      client = new ClientBuilder().setRestApiUrl(testApiURL).setTokenProvider(new TokenBuilder().makeFixed("52f5ae960afdfdde8459a7f414739d7")).setTrustAllCerts(true).makeHiroClient();
     }
 
     @BeforeClass
