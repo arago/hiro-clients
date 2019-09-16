@@ -22,11 +22,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static co.arago.hiro.client.rest.DefaultHiroClient.DEFAULT_API_VERSION;
-import static co.arago.hiro.client.rest.DefaultHiroClient.API_PREFIX;
-import static co.arago.hiro.client.rest.DefaultHiroClient.API_SUFFIX;
-import co.arago.hiro.client.util.HiroCollections;
-import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -36,7 +31,7 @@ public class FakeHiroServer extends NanoHTTPD {
 
     final class Result {
         private final IStatus status;
-      private final String message;
+        private final String message;
 
         public Result(IStatus status, String message) {
             this.message = message;
@@ -53,9 +48,7 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private static final String FAILURE_MSG = "operation failed";
-  private static final String ID_ATTR = "ogit/_id";
-  private static final String URL_PREFIX = "/"
-    + StringUtils.join(HiroCollections.newList(API_PREFIX, DEFAULT_API_VERSION, API_SUFFIX), "/");
+    private static final String ID_ATTR = "ogit/_id";
 
     private final ConcurrentHashMap<String, String> vertices = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, List<String>> edges = new ConcurrentHashMap<>();
@@ -94,18 +87,10 @@ public class FakeHiroServer extends NanoHTTPD {
         return null;
     }
 
-  private static String stripUri(String uri) {
-    if (uri.startsWith(URL_PREFIX)) {
-      return uri.substring(URL_PREFIX.length());
-    } else {
-      return uri;
-    }
-  }
-
     private Response handleGet(IHTTPSession session) {
-      Result result;
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "GET " + uri);
+        LOG.log(defaultLevel, "GET");
+        Result result;
+        String uri = session.getUri();
         String[] split = uri.split("/");
         if (split.length > 2) {
             if (split[1].equals(HiroClient.URL_PATH_QUERY)) {
@@ -154,9 +139,9 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private Response handlePost(IHTTPSession session) throws IOException {
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "POST " + uri);
-      String[] split = uri.split("/");
+        String uri = session.getUri();
+        LOG.log(defaultLevel, "POST");
+        String[] split = uri.split("/");
         Result result;
 
         if (split.length > 2) {
@@ -190,10 +175,10 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private Response handlePut(IHTTPSession session) throws IOException {
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "PUT " + uri);
-      String[] split = uri.split("/");
-      Result result;
+        String uri = session.getUri();
+        String[] split = uri.split("/");
+        LOG.log(defaultLevel, "PUT");
+        Result result;
 
         if (split[1].equals(HiroClient.URL_PATH_VARIABLES)) {
             LOG.log(defaultLevel, "PUT /"+HiroClient.URL_PATH_VARIABLES);
@@ -207,9 +192,9 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private Response handleDelete(IHTTPSession session) {
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "DELETE " + uri);
-      String[] split = uri.split("/");
+        String uri = session.getUri();
+        LOG.log(defaultLevel, "DELETE");
+        String[] split = uri.split("/");
         Result result;
 
         LOG.log(defaultLevel, "DELETE Vertex or Edge");

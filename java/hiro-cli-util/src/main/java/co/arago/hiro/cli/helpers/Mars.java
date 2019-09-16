@@ -23,6 +23,7 @@ public class Mars {
   public static final String DEF_OUTPUT_FORMAT = "json";
   public static final String MARS_EDGE_TYPE = OGIT_DEPENDS_ON;
   public static final boolean XIDS_SUPPORTED = true;
+  public static final boolean DEPLOY_SUPPORTED = false;
   public static final List<String> INPUT_FORMATS = Arrays.asList("json");
   public static final String DEF_INPUT_FORMAT = "json";
 

@@ -1,9 +1,8 @@
 package co.arago.hiro.client.auth;
 
+import co.arago.hiro.client.api.Token;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
-import static co.arago.hiro.client.util.Helper.notEmpty;
-import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Throwables;
@@ -19,16 +18,12 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 
-import org.apache.commons.lang.StringUtils;
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *
  */
 public abstract class AbstractTokenProvider implements TokenProvider, Closeable {
-
-  public static final String DEFAULT_API_VERSION = "6";
-  public static final String API_PREFIX = "/api";
-  public static final String API_SUFFIX = "auth";
 
   private static final Logger LOG = Logger.getLogger(AbstractTokenProvider.class.getName());
   protected static final String REFRESH_TOKEN = "refresh_token";
@@ -43,7 +38,6 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
   private final AsyncHttpClient client;
   private final String url;
-  private final String apiUrl;
   protected final String clientSecret;
   protected final String clientId;
   protected boolean debugRest = false;
@@ -55,11 +49,11 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
   public AbstractTokenProvider(String url, String clientId, String clientSecret,
     AsyncHttpClient client, boolean trustAllCerts) {
-    this(url, clientId, clientSecret, client, trustAllCerts, null, null);
+    this(url, clientId, clientSecret, client, trustAllCerts, null);
   }
 
   public AbstractTokenProvider(String url, String clientId, String clientSecret,
-    AsyncHttpClient client, boolean trustAllCerts, Level debugLevel, String apiVersion) {
+    AsyncHttpClient client, boolean trustAllCerts, Level debugLevel) {
     this.url = notEmpty(url, "url").replaceAll("/+$", "");
     this.clientId = notEmpty(clientId, "clientId");
     this.clientSecret = notEmpty(clientSecret, "clientSecret");
@@ -68,17 +62,12 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
       this.debugRest = true;
       this.debugRestLevel = debugLevel;
     }
-    if (apiVersion != null && !apiVersion.isEmpty()) {
-      this.apiUrl = StringUtils.join(HiroCollections.newList(API_PREFIX, apiVersion, API_SUFFIX), "/");
-    } else {
-      this.apiUrl = StringUtils.join(HiroCollections.newList(API_PREFIX, DEFAULT_API_VERSION, API_SUFFIX), "/");
-    }
   }
 
   private synchronized void obtainToken() {
     final Map data = new HashMap();
     prepareTokenRequest(data);
-    final BoundRequestBuilder builder = newRequest(data, apiUrl + "/app");
+    final BoundRequestBuilder builder = newRequest(data, "/api/6/auth/app");
 
     try {
       if (debugRest) {
@@ -124,7 +113,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
   @Override
   public void revokeToken(boolean resetState) {
     final Map data = new HashMap();
-    BoundRequestBuilder builder = newRequest(data, apiUrl + "/revoke");
+    BoundRequestBuilder builder = newRequest(data, "/api/6/auth/revoke");
     builder.addHeader("Authorization", "Bearer " + currentToken);
 
     Response response;
@@ -157,7 +146,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
     final Map data = new HashMap();
     data.put(REFRESH_TOKEN, refreshToken);
-    final BoundRequestBuilder builder = newRequest(data, apiUrl + "/refresh");
+    final BoundRequestBuilder builder = newRequest(data, "/api/6/auth/refresh");
 
     try {
       final Response response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));

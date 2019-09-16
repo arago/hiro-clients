@@ -16,7 +16,6 @@ public interface OGITConstants {
   String NAMESPACE_SOFTWARE = NAMESPACE_OGIT + "Software" + NAMESPACE_SEPERATOR;
   String NAMESPACE_AUTH = NAMESPACE_OGIT + "Auth" + NAMESPACE_SEPERATOR;
   String NAMESPACE_AUTH_APPLICATION = NAMESPACE_AUTH + "Application" + NAMESPACE_SEPERATOR;
-  String NAMESPACE_AUTH_ACCOUNT = NAMESPACE_AUTH + "Account" + NAMESPACE_SEPERATOR;
 
   String NAMESPACE_PURL = "http://www.purl.org/";
 
@@ -26,21 +25,18 @@ public interface OGITConstants {
 
   interface Attributes {
 
-    // core
+    //core
     String OGIT__CREATED_ON = NAMESPACE_OGIT + "_created-on";
     String OGIT__CONTENT = NAMESPACE_OGIT + "_content";
     String OGIT__CREATOR = NAMESPACE_OGIT + "_creator";
-    String OGIT__ON_BEHALF_CREATOR = NAMESPACE_OGIT + "_on-behalf-creator";
     String OGIT__CREATOR_APP = NAMESPACE_OGIT + "_creator-app";
     String OGIT__DELETED_ON = NAMESPACE_OGIT + "_deleted-on";
     String OGIT__DELETED_BY = NAMESPACE_OGIT + "_deleted-by";
-    String OGIT__ON_BEHALF_DELETED_BY = NAMESPACE_OGIT + "_on-behalf-deleted-by";
     String OGIT__DELETED_BY_APP = NAMESPACE_OGIT + "_deleted-by-app";
     String OGIT__EDGE_ID = NAMESPACE_OGIT + "_edge-id";
     String OGIT__GRAPHTYPE = NAMESPACE_OGIT + "_graphtype";
     String OGIT__GRAPHVERSION = NAMESPACE_OGIT + "_v";
     String OGIT__GRAPHVERSION_ID = NAMESPACE_OGIT + "_v-id";
-    String OGIT__CONTENTVERSION_ID = NAMESPACE_OGIT + "_c-id";
     String OGIT__IN_VERSION_ID = NAMESPACE_OGIT + "_in-v-id";
     String OGIT__OUT_VERSION_ID = NAMESPACE_OGIT + "_out-v-id";
     String OGIT__ID = NAMESPACE_OGIT + "_id";
@@ -48,7 +44,6 @@ public interface OGITConstants {
     String OGIT__IN_ID = NAMESPACE_OGIT + "_in-id";
     String OGIT__IS_DELETED = NAMESPACE_OGIT + "_is-deleted";
     String OGIT__MODIFIED_BY = NAMESPACE_OGIT + "_modified-by";
-    String OGIT__ON_BEHALF_MODIFIED_BY = NAMESPACE_OGIT + "_on-behalf-modified-by";
     String OGIT__MODIFIED_BY_APP = NAMESPACE_OGIT + "_modified-by-app";
     String OGIT__MODIFIED_ON = NAMESPACE_OGIT + "_modified-on";
     String OGIT__OUT_ID = NAMESPACE_OGIT + "_out-id";
@@ -59,11 +54,9 @@ public interface OGITConstants {
     String OGIT__TAGS = NAMESPACE_OGIT + "_tags";
     String OGIT__TYPE = NAMESPACE_OGIT + "_type";
     String OGIT__SOURCE = NAMESPACE_OGIT + "_source";
-    String OGIT__ACL = NAMESPACE_OGIT + "_acl";
-    String OGIT__ORGANIZATION = NAMESPACE_OGIT + "_organization";
-    String OGIT__SCOPE = NAMESPACE_OGIT + "_scope";
+    String OGIT__SECURITY_TYPES = NAMESPACE_OGIT + "_security-types";
 
-    // SGO
+    //SGO
     String OGIT_ADMIN_CONTRACT = NAMESPACE_OGIT + "admin-contact";
     String OGIT_ASSIGNEDGROUP = NAMESPACE_OGIT + "assignedGroup";
     String OGIT_ACCESSCONTROL = NAMESPACE_OGIT + "accessControl";
@@ -121,7 +114,6 @@ public interface OGITConstants {
     String OGIT_VALIDFROM = NAMESPACE_OGIT + "validFrom";
     String OGIT_VALIDUNTIL = NAMESPACE_OGIT + "validUntil";
     String OGIT_VALIDTO = NAMESPACE_OGIT + "validTo";
-    String OGIT_DEADLINE = NAMESPACE_OGIT + "deadline";
     String OGIT_VERSION = NAMESPACE_OGIT + "_version";
     String OGITVERSION = NAMESPACE_OGIT + "version";
     String OGIT_YAML_ONTOLOGY_ID = NAMESPACE_OGIT + "OGIT";
@@ -138,11 +130,8 @@ public interface OGITConstants {
     String OGIT_LAST_UPDATED_AT = NAMESPACE_OGIT + "lastUpdatedAt";
     String OGIT_SOURCE_ID = NAMESPACE_OGIT + "sourceId";
     String OGIT_LOCKED = NAMESPACE_OGIT + "locked";
-    String OGIT_ISINTERNAL = NAMESPACE_OGIT + "isInternal";
-    String OGIT_INSTANCE = NAMESPACE_OGIT + "instance";
-    String OGIT_ISMUTABLE = NAMESPACE_OGIT + "isMutable";
 
-    // AUTOMATION
+    //AUTOMATION
     String AUTOMATION_AUTOMATION_STATE = NAMESPACE_AUTOMATION + "automationState";
     String AUTOMATION_AFFECTEDNODEID = NAMESPACE_AUTOMATION + "affectedNodeId";
     String AUTOMATION_COMMAND = NAMESPACE_AUTOMATION + "command";
@@ -166,7 +155,6 @@ public interface OGITConstants {
     String AUTOMATION_PROCESSINGTIMESTAMP = NAMESPACE_AUTOMATION + "processingTimestamp";
     String AUTOMATION_IS_TODO = NAMESPACE_AUTOMATION + "todo";
     String AUTOMATION_LIFECYCLE = NAMESPACE_AUTOMATION + "lifecycle";
-    String AUTOMATION_ISSUETYPE = NAMESPACE_AUTOMATION + "issueType";
     String AUTOMATION_ISSUE_ORIGIN_NODE = NAMESPACE_AUTOMATION + "originNode";
     String AUTOMATION_ISSUE_PROCESSING_NODE = NAMESPACE_AUTOMATION + "processingNode";
 
@@ -174,16 +162,16 @@ public interface OGITConstants {
     String MARS_NETWORK_FQDN = NAMESPACE_MARS + NAMESPACE_SEPERATOR
       + NAMESPACE_NETWORK + NAMESPACE_SEPERATOR + "fqdn";
 
-    // SERVICEMANAGEMENT
+    //SERVICEMANAGEMENT
     String SERVICEMANAGEMENT_LICENSETOKENSTATUS = NAMESPACE_SERVICEMANAGEMENT + "licenseTokenStatus";
     String SERVICEMANAGEMENT_INCIDENTSTATUS = NAMESPACE_SERVICEMANAGEMENT + "incidentStatus";
     String SERVICEMANAGEMENT_CHANGEREQUESTSTATUS = NAMESPACE_SERVICEMANAGEMENT + "changeStatus";
     String SERVICEMANAGEMENT_SUBTASKSTATUS = NAMESPACE_SERVICEMANAGEMENT + "taskStatus";
 
-    // DATA
+    //DATA
     String DATA_TIMETOLIVE = NAMESPACE_DATA + "timeToLive";
 
-    // DATAPROCESSING
+    //DATAPROCESSING
     String DATAPROCESSING_QUERYTYPE = NAMESPACE_DATAPROCESSING + "queryType";
     String DATAPROCESSING_QUERY = NAMESPACE_DATAPROCESSING + "query";
     String DATAPROCESSING_PARAMETERS = NAMESPACE_DATAPROCESSING + "parameters";
@@ -191,27 +179,16 @@ public interface OGITConstants {
     String DATAPROCESSING_STATE = NAMESPACE_DATAPROCESSING + "state";
     String DATAPROCESSING_INTERNALJOBID = NAMESPACE_DATAPROCESSING + "internalJobId";
 
-    // AUTH
-    String AUTH_VERTEXRULE = NAMESPACE_AUTH + "vertexRule";
-    String AUTH_EDGERULE = NAMESPACE_AUTH + "edgeRule";
-    String AUTH_RESTRICTED = NAMESPACE_AUTH + "restricted";
-
-    // AUTH/APPLICATION
+    //AUTH
+    String AUTH_IAM_DOMAIN = NAMESPACE_AUTH + "_iam-domain";
+    //AUTH/APPLICATION
     String AUTH_APPLICATION_TYPE = NAMESPACE_AUTH_APPLICATION + "type";
     String AUTH_APPLICATION_STATUS = NAMESPACE_AUTH_APPLICATION + "status";
     String AUTH_APPLICATION_PARENT = NAMESPACE_AUTH_APPLICATION + "parent";
     String AUTH_APPLICATION_URLS = NAMESPACE_AUTH_APPLICATION + "urls";
+    String AUTH_APPLICATION_ALLOWEDTYPES = NAMESPACE_AUTH_APPLICATION + "allowedTypes";
 
-    // AUTH/ACCOUNT
-    String AUTH_ACCOUNT_TYPE = NAMESPACE_AUTH_ACCOUNT + "type";
-    String AUTH_ACCOUNT_PRIVACY = NAMESPACE_AUTH_ACCOUNT + "acceptedPrivacy";
-    String AUTH_ACCOUNT_TERMS = NAMESPACE_AUTH_ACCOUNT + "acceptedTerms";
-    String AUTH_ACCOUNT_PROJECTS_TERMS = NAMESPACE_AUTH_ACCOUNT + "acceptedProjectTerms";
-    String AUTH_ACCOUNT_EMAILS = NAMESPACE_AUTH_ACCOUNT + "acceptedEmails";
-    String AUTH_ACCOUNT_COOKIES = NAMESPACE_AUTH_ACCOUNT + "allowCookies";
-    String AUTH_ACCOUNT_DISPLAYNAME = NAMESPACE_AUTH_ACCOUNT + "displayName";
-    String AUTH_ACCOUNT_STATUS_REASON = NAMESPACE_AUTH_ACCOUNT + "statusReason";
-    // free attributes
+    //free attributes
     String FREE_ATTRIBUTE_IDENTITY = "/identity";
     String FREE_ATTRIBUTE_PROFILESET = "/profileSet";
     String FREE_ATTRIBUTE_AUTOPILOT_VERSION = "/autopilotVersion";
@@ -219,7 +196,7 @@ public interface OGITConstants {
 
   interface Entities {
 
-    // SGO
+    //SGO
     String OGIT_ATTACHMENT = NAMESPACE_OGIT + "Attachment";
     String OGIT_CUSTOM_ENTITY = NAMESPACE_OGIT + "Custom/Entity";
     String OGIT_EVENT = NAMESPACE_OGIT + "Event";
@@ -245,11 +222,10 @@ public interface OGITConstants {
     String OGIT_EMAIL = NAMESPACE_OGIT + "Email";
     String OGIT_LOCATION = NAMESPACE_OGIT + "Location";
     String OGIT_CERTIFICATE = NAMESPACE_OGIT + "Certificate";
-    String OGIT_INSTALLATION = NAMESPACE_OGIT + "Installation";
     String OGIT_NOTIFICATION = NAMESPACE_OGIT + "Notification";
     String OGIT_SUBSCRIPTION = NAMESPACE_OGIT + "Subscription";
 
-    // AUTOMATION
+    //AUTOMATION
     String AUTOMATION_AUTOMATIONISSUE = NAMESPACE_AUTOMATION + "AutomationIssue";
     String AUTOMATION_DYNAMICENGINEDATA = NAMESPACE_AUTOMATION + "DynamicEngineData";
     String AUTOMATION_HISTORY = NAMESPACE_AUTOMATION + "History";
@@ -259,53 +235,45 @@ public interface OGITConstants {
     String AUTOMATION_MARSMODEL = NAMESPACE_AUTOMATION + "MARSModel";
     String AUTOMATION_VARIABLE = NAMESPACE_AUTOMATION + "Variable";
 
-    // MARS
+    //MARS
     String MARS_APPLICATION = NAMESPACE_MARS + "Application";
     String MARS_MACHINE = NAMESPACE_MARS + "Machine";
     String MARS_RESOURCE = NAMESPACE_MARS + "Resource";
     String MARS_SOFTWARE = NAMESPACE_MARS + "Software";
 
-    // SERVICEMANAGEMENT
+    //SERVICEMANAGEMENT
     String SERVICEMANAGEMENT_REPORT = NAMESPACE_SERVICEMANAGEMENT + "Report";
     String SERVICEMANAGEMENT_INCIDENT = NAMESPACE_SERVICEMANAGEMENT + "Incident";
     String SERVICEMANAGEMENT_TICKET = NAMESPACE_SERVICEMANAGEMENT + "Ticket";
     String SERVICEMANAGEMENT_SUBTASK = NAMESPACE_SERVICEMANAGEMENT + "SubTask";
     String SERVICEMANAGEMENT_CHANGEREQUEST = NAMESPACE_SERVICEMANAGEMENT + "ChangeRequest";
 
-    // DATA
+    //DATA
     String DATA_LOG = NAMESPACE_DATA + "Log";
 
-    // DATAPROCESSING
+    //DATAPROCESSING
     String DATAPROCESSING_PROGRAM = NAMESPACE_DATAPROCESSING + "Program";
 
-    // SOFTWARE
+    //SOFTWARE
     String SOFTWARE_APPLICATION = NAMESPACE_SOFTWARE + "Application";
 
-    // AUTH
+    //AUTH
     String AUTH_ACCOUNT = NAMESPACE_AUTH + "Account";
-    String AUTH_ACCOUNTPROFILE = NAMESPACE_AUTH + "AccountProfile";
-    String AUTH_ORGANIZATION = NAMESPACE_AUTH + "Organization";
-    String AUTH_TEAM = NAMESPACE_AUTH + "Team";
     String AUTH_ROLE = NAMESPACE_AUTH + "Role";
-    String AUTH_ROLEASSIGNMENT = NAMESPACE_AUTH + "RoleAssignment";
     String AUTH_APPLICATION = NAMESPACE_AUTH + "Application";
-    String AUTH_DATASET = NAMESPACE_AUTH + "DataSet";
-    String AUTH_ORGDOMAIN = NAMESPACE_AUTH + "OrgDomain";
-    String AUTH_DATASCOPE = NAMESPACE_AUTH + "DataScope";
   }
 
   interface Verbs {
 
-    // graph
+    //graph
     String OGIT__CONSENTS = NAMESPACE_OGIT + "_consents";
 
-    // core
+    //core
     String OGIT__CREATED = NAMESPACE_OGIT + "_created";
     String OGIT__OWNS = NAMESPACE_OGIT + "_owns";
-    // SGO
+    //SGO
     String OGIT_CUSTOM_VERB = NAMESPACE_OGIT + "Custom/Verb";
     String OGIT_AFFECTS = NAMESPACE_OGIT + "affects";
-    String OGIT_ASSOCIATES = NAMESPACE_OGIT + "associates";
     String OGIT_BELONGS = NAMESPACE_OGIT + "belongs";
     String OGIT_CONTAINS = NAMESPACE_OGIT + "contains";
     String OGIT_CORRESPONDS = NAMESPACE_OGIT + "corresponds";
@@ -345,10 +313,8 @@ public interface OGITConstants {
     String OGIT_SUBSCRIBES = NAMESPACE_OGIT + "subscribes";
     String OGIT_INCLUDES = NAMESPACE_OGIT + "includes";
 
-    // AUTH
-    String AUTH_ASSIGNS = NAMESPACE_AUTH + "assigns";
-    String AUTH_BELONGS = NAMESPACE_AUTH + "belongs";
-    String AUTH_ISMEMBEROF = NAMESPACE_AUTH + "isMemberOf";
+    //AUTH
+    String AUTH_ASSUMES = NAMESPACE_AUTH + "assumes";
   }
 
   /**

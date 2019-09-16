@@ -31,7 +31,6 @@ public interface HiroClient extends Closeable {
   }
 
   String EDGE_ID_SEPARATOR = "$$";
-  String JSON_ERROR_INDICATOR = "error";
   String JSON_LIST_INDICATOR = "items";
   String JSON_TS_VALUE = "value";
   String JSON_TS_TIMESTAMP = "timestamp";
@@ -44,20 +43,13 @@ public interface HiroClient extends Closeable {
   String URL_PATH_HISTORY = "history";
   String URL_PATH_EVENTS = "events";
   String URL_PATH_ATTACHMENT = "content";
-  String URL_PATH_VARIABLES = "variables";
+  String URL_PATH_VARIABLES = "_variables";
   String URL_SUBPATH_VAR_DEFINE = "define";
   String URL_PATH_QUERY = "query";
-  String URL_PATH_ME = "me";
+  String URL_PATH_ME = "_me";
   String URL_PATH_INFO = "info";
-  String URL_PATH_VERSION = "version";
   String URL_PATH_XID = "xid";
   String URL_PATH_LOGS = "logs";
-  String URL_PATH_ACCOUNT = "account";
-  String URL_PATH_PROFILE = "profile";
-  String URL_PATH_AVATAR = "avatar";
-  String URL_PATH_PASSWORD = "password";
-  String URL_PATH_TEAMS = "teams";
-  String URL_PATH_ROLES = "roles";
 
   String PARAM_QUERY = "query";
   String PARAM_ROOT = "root";
@@ -67,15 +59,11 @@ public interface HiroClient extends Closeable {
 
   String QUERY_PARAM_FROM = "from";
   String QUERY_PARAM_TO = "to";
-  String QUERY_PARAM_TIMESTAMP = "timestamp";
   String QUERY_PARAM_WITH = "with";
   String QUERY_PARAM_LIMIT = "limit";
   String QUERY_PARAM_OFFSET = "offset";
   String QUERY_PARAM_NAME = "name";
   String QUERY_PARAM_DIRECTION = "direction";
-  String QUERY_PARAM_TS_SYNC = "synchronous";
-
-  String QUERY_PARAM_VIRTUAL_TEAMS = "include-virtual";
 
   // vertex CRUD
   Map getVertex(String vertexId, Map<String, String> requestParameters);
@@ -93,6 +81,8 @@ public interface HiroClient extends Closeable {
 
   // special vertex operations
   List<Map> getVertexHistory(String vertexId, Map<String, String> requestParameters);
+
+  List<Map> getVertexNeighbours(String vertexId, String edgeType, Direction dir);
 
   // queries
   List<Map> vertexQuery(String query, Map<String, String> requestParameters);
@@ -113,18 +103,14 @@ public interface HiroClient extends Closeable {
   // timeseries value handling
   void updateTsValues(String tsNodeId, List<TimeseriesValue> values);
 
-  void updateTsValuesSynchronous(String tsNodeId, List<TimeseriesValue> values);
-
   List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to);
 
   List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to, Map<String, String> requestParameters);
 
   List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to, String combinedWith);
 
-  Map<Long, String> getTsValueHistory(String tsNodeId, long timestamp);
-
   // attachment handling
-  String updateContent(String attachmentNodeId, InputStream is);
+  void updateContent(String attachmentNodeId, InputStream is);
 
   InputStream getContent(String attachmentNodeId);
 
@@ -145,8 +131,6 @@ public interface HiroClient extends Closeable {
 
   Map info();
 
-  Map apiVersion();
-
   // get ws event stream
   void getEventStream(Map<String, String> requestParameters, Listener<String> msgListener, Listener<String> metaListener);
 
@@ -156,24 +140,4 @@ public interface HiroClient extends Closeable {
   List<LogValue> getLogValues(String logNodeId, long from, long to);
 
   void deleteLogValues(String logNodeId, long from, long to);
-
-  Map meAccount(Map<String, String> requestParameters);
-
-  Map getMeProfile();
-
-  Map updateMeProfile(Map<String, String> attributes);
-
-  void updateMeAvatar(InputStream is, String contentType);
-
-  InputStream getMeAvatar();
-
-  Map mePassword(String oldPassword, String newPassword);
-
-  List<Map> meTeams(boolean includeVirtualTeams);
-
-  List<String> meRoles();
-
-  default List<Map> meTeams() {
-    return meTeams(false);
-  }
 }

@@ -16,7 +16,7 @@ public interface HiroAppClient extends Closeable {
     desktop
   }
 
-  String[] PATH = new String[]{"api", "6.1", "app"};
+  String[] PATH = new String[]{"api", "6", "app"};
 
   Map createApplication(ApplicationType type, Map<String, String> attributes);
 

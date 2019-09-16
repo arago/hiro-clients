@@ -6,8 +6,8 @@ import static co.arago.hiro.client.api.RestClient.CONTENT_TYPE_OCTECT_STREAM;
 import static co.arago.hiro.client.api.RestClient.DEFAULT_ENCODING;
 import static co.arago.hiro.client.api.RestClient.HEADER_ACCEPT;
 import static co.arago.hiro.client.api.RestClient.HEADER_CONTENT_TYPE;
+import co.arago.hiro.client.api.Token;
 import co.arago.hiro.client.api.TokenProvider;
-import co.arago.hiro.client.auth.FixedTokenProvider;
 import static co.arago.hiro.client.util.Helper.notEmpty;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Throwables;
@@ -19,14 +19,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
+
 import static co.arago.hiro.client.util.Helper.notNull;
-import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.Listener;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpHeaders;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 import net.minidev.json.JSONValue;
@@ -47,42 +45,33 @@ public class AuthenticatedRestClient implements RestClient {
   private static final int MAX_TRIES = 25;
   private static final int TIMEOUT = 10 * 60 * 1000;
   private final String restApiUrl;
-  private final String apiPath;
   private final int timeout;
   private final AsyncHttpClient client;
   private final boolean debugRest;
   private final Level debugRestLevel;
   private final TokenProvider tokenProvider;
-  private final boolean trustAllCerts;
-  public static final List REDIRECT_CODES = HiroCollections.newList(301, 302, 303, 307, 308);
 
   public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel) {
-    this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, null);
+    this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0);
   }
 
   public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel, int timeout) {
-    this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, null);
+    this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout);
   }
 
   // if client is set then trustAllCerts and timeout are already set
   public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client, Level debugLevel) {
-    this(restApiUrl, tokenProvider, client, false, debugLevel, 0, null);
+    this(restApiUrl, tokenProvider, client, false, debugLevel, 0);
   }
 
   // still needed for ClientBuilder => public
-  public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client, boolean trustAllCerts, Level debugLevel, int timeout, String apiPath) {
+  public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client, boolean trustAllCerts, Level debugLevel, int timeout) {
     this.timeout = timeout > 0 ? timeout : TIMEOUT;
     this.restApiUrl = notEmpty(restApiUrl, "restApiUrl").endsWith("/") ? restApiUrl.substring(0, restApiUrl.length() - 1) : restApiUrl;
     this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, this.timeout) : client;
     this.debugRest = debugLevel != null && !Level.OFF.equals(debugLevel);
     this.debugRestLevel = debugRest ? debugLevel : Level.OFF;
     this.tokenProvider = notNull(tokenProvider, "tokenProvider");
-    if (apiPath != null && !apiPath.isEmpty()) {
-      this.apiPath = apiPath;
-    } else {
-      this.apiPath = "";
-    }
-    this.trustAllCerts = trustAllCerts;
   }
 
   @Override
@@ -110,18 +99,6 @@ public class AuthenticatedRestClient implements RestClient {
     BoundRequestBuilder prepareGet
       = client().prepareGet(composeUrl(path));
     return runRequest(prepareGet, body, params);
-  }
-
-  @Override
-  public String get(String path, Map<String, String> params) {
-    if (LOG.isLoggable(Level.FINER)) {
-      LOG.log(Level.FINER, "operation: {0} path: {1} params: {2}",
-        new Object[]{"GET", path, params});
-    }
-    BoundRequestBuilder prepareGet
-      = client().prepareGet(restApiUrl + "/" + path);
-    return runRequest(prepareGet, null, params);
-
   }
 
   @Override
@@ -179,7 +156,7 @@ public class AuthenticatedRestClient implements RestClient {
   }
 
   @Override
-  public String postBinary(List<String> path, InputStream dataStream) {
+  public void postBinary(List<String> path, InputStream dataStream) {
     if (LOG.isLoggable(Level.FINER)) {
       LOG.log(Level.FINER, "operation: {0} path: {1}",
         new Object[]{"POST-binary", composeUrl(path)});
@@ -187,11 +164,11 @@ public class AuthenticatedRestClient implements RestClient {
     BoundRequestBuilder preparePost
       = client().preparePost(composeUrl(path));
     preparePost.setBody(dataStream);
-    return runRequest(preparePost, null, null);
+    runBasicRequest(preparePost, null, null);
   }
 
   @Override
-  public void putBinary(List<String> path, InputStream dataStream, Map<String, String> params) {
+  public void putBinary(List<String> path, InputStream dataStream) {
     if (LOG.isLoggable(Level.FINER)) {
       LOG.log(Level.FINER, "operation: {0} path: {1}",
         new Object[]{"POST-binary", composeUrl(path)});
@@ -199,7 +176,7 @@ public class AuthenticatedRestClient implements RestClient {
     BoundRequestBuilder preparePut
       = client().preparePut(composeUrl(path));
     preparePut.setBody(dataStream);
-    runBasicRequest(preparePut, null, params);
+    runBasicRequest(preparePut, null, null);
   }
 
   @Override
@@ -231,10 +208,6 @@ public class AuthenticatedRestClient implements RestClient {
 
   private final String composeUrl(List<String> parts) {
     StringBuilder url = new StringBuilder(restApiUrl);
-    if (!apiPath.isEmpty()) {
-      url.append("/");
-      url.append(apiPath);
-    }
     for (String part : notEmpty(parts, "parts")) {
       try {
         url.append("/");
@@ -244,42 +217,6 @@ public class AuthenticatedRestClient implements RestClient {
       }
     }
     return url.toString();
-  }
-
-  public String getRedirectLocation(List<String> path, Map<String, String> params) {
-    BoundRequestBuilder prepareGet
-      = client().prepareGet(composeUrl(path)).setFollowRedirect(false);
-    Response response = runBasicRequest(prepareGet, null, params);
-    if (REDIRECT_CODES.contains(response.getStatusCode())) {
-      if (debugRest) {
-        LOG.log(debugRestLevel, "Found redirect with code={0} location={1}",
-          new Object[]{response.getStatusCode(), response.getHeader("Location")});
-      }
-      return (String) response.getHeader("Location");
-    } else {
-      throw new RuntimeException("Got unexpected HTTP code (" + Integer.toString(response.getStatusCode())
-        + ") from expected redirect request: " + prepareGet.toString());
-    }
-  }
-
-  public InputStream getBinaryFromStaticLocation(String url) {
-    if (url != null) {
-      try {
-        URL resourceUrl = new URL(url);
-        final List bpaths = HiroCollections.newList(resourceUrl.getPath().split("\\/"));
-        bpaths.remove(0); // remove /
-        URL baseUrl = new URL(resourceUrl.getProtocol(), resourceUrl.getHost(),
-          resourceUrl.getPort(), "");
-        AuthenticatedRestClient binClient = new AuthenticatedRestClient(baseUrl.toString(),
-          new FixedTokenProvider("NO_TOKEN_REQUIRED"), trustAllCerts, debugRestLevel, timeout);
-        return binClient.getBinary(bpaths, HiroCollections.newMap());
-      } catch (MalformedURLException ex) {
-        throw new RuntimeException("got illegal redirect URL for avatar: " + url);
-      }
-    } else {
-      throw new RuntimeException("failed to get redirect URL of avatar");
-    }
-
   }
 
   private String runRequest(BoundRequestBuilder builder, String json, Map<String, String> parameters) {
@@ -309,7 +246,7 @@ public class AuthenticatedRestClient implements RestClient {
 
   private void runAsyncRequest(BoundRequestBuilder builder, Map<String, String> parameters, final Listener<Map> listener, boolean retryToken) {
     try {
-      addDefaultHeaders(builder, parameters);
+      addDefaultHeaders(builder);
       addParameters(builder, parameters);
 
       if (debugRest) {
@@ -375,7 +312,7 @@ public class AuthenticatedRestClient implements RestClient {
 
   private org.asynchttpclient.Response runBasicRequest(BoundRequestBuilder builder, String json, Map<String, String> parameters) {
     try {
-      addDefaultHeaders(builder, parameters);
+      addDefaultHeaders(builder);
       addParameters(builder, parameters);
       addBody(builder, json);
 
@@ -473,16 +410,7 @@ public class AuthenticatedRestClient implements RestClient {
     }
   }
 
-  private void addDefaultHeaders(BoundRequestBuilder builder, Map<String, String> parameters) {
-    if (parameters != null && parameters.containsKey(HEADER_ON_BEHALF_TOKEN)) {
-      builder.setHeader(HEADER_ON_BEHALF_TOKEN, parameters.remove(HEADER_ON_BEHALF_TOKEN));
-    }
-    if (parameters != null && parameters.containsKey(HEADER_CONTENT_TYPE)) {
-      builder.setHeader(HEADER_CONTENT_TYPE, parameters.remove(HEADER_CONTENT_TYPE));
-    }
-    if (parameters != null && parameters.containsKey(HEADER_IMPORT)) {
-      builder.setHeader(HEADER_IMPORT, parameters.remove(HEADER_IMPORT));
-    }
+  private void addDefaultHeaders(BoundRequestBuilder builder) {
     addToken(builder);
     builder.setHeader(HEADER_ACCEPT, CONTENT_TYPE_DEFAULT);
   }

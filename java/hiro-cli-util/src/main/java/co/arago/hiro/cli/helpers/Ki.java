@@ -13,6 +13,7 @@ import static co.arago.hiro.client.api.OGITConstants.Entities.*;
 public class Ki {
 
   public static final boolean XIDS_SUPPORTED = true;
+  public static final boolean DEPLOY_SUPPORTED = false; // assuming edge-based KI deployment
   public static final List<String> OUTPUT_FORMATS = Arrays.asList("ki", "json", "json-compact");
   public static final List<String> WRAPPED_FORMATS = Arrays.asList("xml", "ki"); // "xml" for compat
   public static final String WRAPPED_FORMAT = "ki";
@@ -33,7 +34,7 @@ public class Ki {
   public static final List<String> LONG_LIST_ATTRS = Arrays.asList(OGIT__XID, OGIT_NAME, AUTOMATION_KNOWLEDGEITEM_SYNTAXVERSION, OGIT_DESCRIPTION);
   public static final List<String> SHORT_LIST_ATTRS = Arrays.asList(OGIT__XID, OGIT_NAME);
 
-  public static Map toMap(final String ki) throws IOException {
+  public static Map toMap(final boolean ignore, final String ki) throws IOException {
     Map m = new HashMap();
     m.put(AUTOMATION_KNOWLEDGEITEMFORMALREPRESENTATION, ki);
 

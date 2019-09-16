@@ -50,24 +50,6 @@ public class Helper {
     }
   }
 
-  public static Map unwrapJsonMap(final String data) {
-    final Object o = JSONValue.parse(data);
-    if (o instanceof Map) {
-      return (Map) o;
-    } else {
-      throw new HiroException("response is not valid JSON map: " + data, 500);
-    }
-  }
-
-  public static List unwrapJsonArray(final String data) {
-    final Object o = JSONValue.parse(data);
-    if (o instanceof List) {
-      return (List) o;
-    } else {
-      throw new HiroException("response is not valid JSON array: " + data, 500);
-    }
-  }
-
   public static String notEmpty(final String ref, final String who) {
     if (ref == null || ref.isEmpty()) {
       throw new HiroException(who + " is empty", 400);
@@ -92,11 +74,8 @@ public class Helper {
     return ref;
   }
 
-  public static List<Map> parseItemListOfMaps(String json) {
+  public static List<Map> parseItemList(String json) {
     Map body = Helper.parseJsonBody(json);
-    if (body.containsKey(JSON_ERROR_INDICATOR)) {
-      throw new HiroException(body.get(JSON_ERROR_INDICATOR).toString(), 500);
-    }
     if (body.containsKey(JSON_LIST_INDICATOR)) {
       Object o1 = body.get(JSON_LIST_INDICATOR);
       List items = (List) o1;
@@ -107,28 +86,6 @@ public class Helper {
           return (List<Map>) body.get(JSON_LIST_INDICATOR);
         } else {
           throw new RuntimeException("JSON response is not a Map, try Object: " + json);
-        }
-      }
-    } else {
-      throw new RuntimeException("did not find list indicator in JSON response: " + json);
-    }
-  }
-
-  public static List<String> parseItemListOfStrings(String json) {
-    Map body = Helper.parseJsonBody(json);
-    if (body.containsKey(JSON_ERROR_INDICATOR)) {
-      throw new HiroException(body.get(JSON_ERROR_INDICATOR).toString(), 500);
-    }
-    if (body.containsKey(JSON_LIST_INDICATOR)) {
-      Object o1 = body.get(JSON_LIST_INDICATOR);
-      List items = (List) o1;
-      if (items.isEmpty()) {
-        return items;
-      } else {
-        if (items.get(0) instanceof String) {
-          return (List<String>) body.get(JSON_LIST_INDICATOR);
-        } else {
-          throw new RuntimeException("JSON response is not a String, try Object: " + json);
         }
       }
     } else {

@@ -18,6 +18,7 @@ public class Issue {
 
   private static final Logger LOG = Logger.getLogger(Issue.class.getName());
   public static final boolean XIDS_SUPPORTED = false;
+  public static final boolean DEPLOY_SUPPORTED = false; // but "deployStatus" might be used. see PHE-76
   public static final String DEPLOYED_STATUS_VALUE = "deployed";
   public static final List<String> OUTPUT_FORMATS = Arrays.asList("json", "json-compact");
   public static final String WRAPPED_FORMAT = "NONE";
@@ -63,9 +64,6 @@ public class Issue {
       if (!m.containsKey(attr)) {
         throw new IllegalArgumentException("Mandatory argument (" + attr + ") missing in JSON input");
       }
-    }
-    if (!m.containsKey(AUTOMATION_ISSUETYPE)) {
-      m.put(AUTOMATION_ISSUETYPE, "unknown");
     }
     if (m.containsKey(OGIT__ID)) {
       LOG.log(Level.WARNING, "Ingoring \"{0}\"=\"{1}\" from input JSON",
