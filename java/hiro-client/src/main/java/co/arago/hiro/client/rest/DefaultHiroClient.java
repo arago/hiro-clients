@@ -371,7 +371,7 @@ public class DefaultHiroClient implements HiroClient {
     }
   }
   
-  private List getSubProtocols() {
+  protected List getSubProtocols() {
     final List protocols = new ArrayList();
     protocols.add("events-1.0.0");
     protocols.add("token-" + tokenProvider.getToken());
