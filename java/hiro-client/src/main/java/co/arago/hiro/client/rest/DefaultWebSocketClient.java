@@ -6,6 +6,9 @@ import co.arago.hiro.client.util.Helper;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.Listener;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,11 +31,14 @@ public class DefaultWebSocketClient implements WebSocketClient {
   private final AtomicInteger idCounter;
   private final Level debugLevel;
 
-  public DefaultWebSocketClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client, Level debugLevel, int timeout, Listener<String> dataListener, Listener<String> loglistener) throws InterruptedException, ExecutionException {
+  public DefaultWebSocketClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
+                                Level debugLevel, int timeout, Listener<String> dataListener,
+                                Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
     this.idCounter = new AtomicInteger();
     this.debugLevel = debugLevel;
     WebSocketUpgradeHandler.Builder upgradeHandlerBuilder
       = new WebSocketUpgradeHandler.Builder();
+
     WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
       .addWebSocketListener(new WebSocketListener() {
         @Override
@@ -70,12 +76,39 @@ public class DefaultWebSocketClient implements WebSocketClient {
         webSocketClient.sendPongFrame(payload);
       }
       }).build();
-    webSocketClient = client
-      .prepareGet(restApiUrl.replace("http", "ws") + "/" + StringUtils.join(HiroCollections.newList(API_PREFIX, DEFAULT_API_VERSION, API_SUFFIX), "/"))
+      webSocketClient = client
+      .prepareGet(composeWsUrl(restApiUrl))
       .addHeader("Sec-WebSocket-Protocol", "graph-2.0.0, token-" + tokenProvider.getToken())
       .setRequestTimeout(timeout)
       .execute(wsHandler)
       .get();
+  }
+
+  private String composeWsUrl(String inUrl) throws URISyntaxException {
+    URI uri = new URI(inUrl);
+    StringBuilder sb = new StringBuilder();
+    if ("http".equals(uri.getScheme())) {
+      sb.append("ws://");
+    } else if ("https".equals(uri.getScheme())) {
+      sb.append("wss://");
+    } else {
+      sb.append(uri.getScheme());
+      sb.append("://");
+    }
+    sb.append(uri.getHost());
+    if (uri.getPort() > 0) {
+      sb.append(":");
+      sb.append(uri.getPort());
+    }
+    if (uri.getPath().isEmpty()) {
+      sb.append("/");
+      sb.append(API_PREFIX);
+      sb.append("/");
+      sb.append(DEFAULT_API_VERSION);
+      sb.append("/");
+      sb.append(API_SUFFIX);
+    }
+    return sb.toString();
   }
 
   @Override
