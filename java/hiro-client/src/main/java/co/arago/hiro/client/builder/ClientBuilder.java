@@ -7,7 +7,11 @@ import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
 import co.arago.hiro.client.rest.DefaultHiroClient;
 import co.arago.hiro.client.rest.DefaultWebSocketClient;
+
+import java.net.URISyntaxException;
 import java.util.logging.Level;
+
+import co.arago.hiro.client.util.HttpClientHelper;
 import org.asynchttpclient.AsyncHttpClient;
 
 import static co.arago.hiro.client.util.Helper.*;
@@ -34,6 +38,18 @@ public class ClientBuilder {
     return this;
   }
 
+  /**
+   * allows to set externally created AsyncHttpClient
+   *
+   * usually not required since a missing client will
+   * be created automatically.
+   *
+   * if used the caller is responsible
+   * for proper initialization, e.g. setting timeouts
+   *
+   * @param client
+   * @return
+   */
   public ClientBuilder setClient(AsyncHttpClient client) {
     this.client = client;
     return this;
@@ -72,7 +88,11 @@ public class ClientBuilder {
       trustAllCerts, debugLevel, timeout, null);
   }
 
-  public WebSocketClient makeWebSocketClient(Listener<String> dataListener, Listener<String> loglistener) throws InterruptedException, ExecutionException {
+  public WebSocketClient makeWebSocketClient(Listener<String> dataListener, Listener<String> loglistener)
+          throws InterruptedException, ExecutionException, URISyntaxException {
+    if (client == null) {
+      client =  HttpClientHelper.newClient(trustAllCerts, this.timeout);
+    }
     return new DefaultWebSocketClient(restApiUrl, tokenProvider, client, debugLevel, timeout, dataListener, loglistener);
   }
 }
