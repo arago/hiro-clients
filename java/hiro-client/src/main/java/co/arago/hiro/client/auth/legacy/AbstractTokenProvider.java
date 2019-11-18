@@ -1,6 +1,7 @@
 package co.arago.hiro.client.auth.legacy;
 
 import co.arago.hiro.client.api.TokenProvider;
+import static co.arago.hiro.client.util.Helper.notEmpty;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Throwables;
@@ -14,8 +15,6 @@ import net.minidev.json.JSONValue;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
-
-import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *

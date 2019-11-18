@@ -15,11 +15,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  *

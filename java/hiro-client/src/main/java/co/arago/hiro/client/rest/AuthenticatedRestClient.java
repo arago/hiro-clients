@@ -9,28 +9,28 @@ import static co.arago.hiro.client.api.RestClient.HEADER_CONTENT_TYPE;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.auth.FixedTokenProvider;
 import static co.arago.hiro.client.util.Helper.notEmpty;
-import co.arago.hiro.client.util.HttpClientHelper;
-import co.arago.hiro.client.util.Throwables;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
 import static co.arago.hiro.client.util.Helper.notNull;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
+import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Listener;
+import co.arago.hiro.client.util.Throwables;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpHeaders;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.minidev.json.JSONValue;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
@@ -417,7 +417,7 @@ public class AuthenticatedRestClient implements RestClient {
     if (status >= 200 && status <= 399) {
       return response;
     } else {
-      throw new HiroException(tryUnwrap(response.getResponseBody(), response.getStatusText()), status);
+      throw new HiroException(tryUnwrap(response.getResponseBody(), response.getStatusText()), status, JSONValue.parse(response.getResponseBody()));
     }
   }
 

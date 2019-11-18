@@ -6,7 +6,6 @@ import co.arago.hiro.client.util.Helper;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.Listener;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -15,7 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
