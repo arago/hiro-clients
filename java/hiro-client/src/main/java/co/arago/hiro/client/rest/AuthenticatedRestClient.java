@@ -417,7 +417,7 @@ public class AuthenticatedRestClient implements RestClient {
     if (status >= 200 && status <= 399) {
       return response;
     } else {
-      throw new HiroException(tryUnwrap(response.getResponseBody(), response.getStatusText()), status, JSONValue.parse(response.getResponseBody()));
+      throw new HiroException(tryUnwrap(response.getResponseBody(), response.getStatusText()), status, isEmpty(response.getResponseBody())?null:JSONValue.parse(response.getResponseBody()));
     }
   }
 
