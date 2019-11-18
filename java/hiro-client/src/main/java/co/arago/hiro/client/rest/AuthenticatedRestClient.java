@@ -6,29 +6,27 @@ import static co.arago.hiro.client.api.RestClient.CONTENT_TYPE_OCTECT_STREAM;
 import static co.arago.hiro.client.api.RestClient.DEFAULT_ENCODING;
 import static co.arago.hiro.client.api.RestClient.HEADER_ACCEPT;
 import static co.arago.hiro.client.api.RestClient.HEADER_CONTENT_TYPE;
-import co.arago.hiro.client.api.Token;
 import co.arago.hiro.client.api.TokenProvider;
 import static co.arago.hiro.client.util.Helper.notEmpty;
+import static co.arago.hiro.client.util.Helper.notNull;
+import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
+import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.Throwables;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.handler.codec.http.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
-
-import static co.arago.hiro.client.util.Helper.notNull;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.Listener;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.handler.codec.http.HttpHeaders;
-import java.net.URLEncoder;
-import java.util.Map;
 import net.minidev.json.JSONValue;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
@@ -354,7 +352,7 @@ public class AuthenticatedRestClient implements RestClient {
     if (status >= 200 && status <= 399) {
       return response;
     } else {
-      throw new HiroException(tryUnwrap(response.getResponseBody(), response.getStatusText()), status);
+      throw new HiroException(tryUnwrap(response.getResponseBody(), response.getStatusText()), status, isEmpty(response.getResponseBody())?null:JSONValue.parse(response.getResponseBody()));
     }
   }
 
