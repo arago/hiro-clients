@@ -9,6 +9,7 @@ public class HiroException extends RuntimeException implements Serializable {
 
   private static final long serialVersionUID = 42L;
   private final int code;
+  private Object details;
   private final transient Throwable cause;
 
   public HiroException(final String message, final int code) {
@@ -17,12 +18,23 @@ public class HiroException extends RuntimeException implements Serializable {
     this.code = code;
     this.cause = null;
   }
+  
+  public HiroException(final String message, final int code, final Object details) {
+    super(message);
 
-  public HiroException(final String message, final int code, final Throwable t) {
+    this.code = code;
+    this.cause = null;
+    
+    setDetails(details);
+  }
+
+  public HiroException(final String message, final int code, final Throwable t, final Object details) {
     super(message);
 
     this.code = code;
     this.cause = t;
+    
+    setDetails(details);
   }
 
   /**
@@ -37,5 +49,15 @@ public class HiroException extends RuntimeException implements Serializable {
   @Override
   public synchronized Throwable getCause() {
     return (cause == this ? null : cause);
+  }
+  
+  public Object getDetails() {
+    return details;
+  }
+
+  private void setDetails(Object details) {
+    if (details == null) return;
+    
+    this.details = details;
   }
 }
