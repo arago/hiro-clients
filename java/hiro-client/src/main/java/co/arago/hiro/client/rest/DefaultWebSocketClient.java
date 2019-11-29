@@ -33,7 +33,11 @@ public class DefaultWebSocketClient implements WebSocketClient {
                                 Level debugLevel, int timeout, Listener<String> dataListener,
                                 Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
     this.idCounter = new AtomicInteger();
-    this.debugLevel = debugLevel;
+    if (debugLevel != null) {
+      this.debugLevel = debugLevel;
+    } else {
+      this.debugLevel = Level.OFF;
+    }
     WebSocketUpgradeHandler.Builder upgradeHandlerBuilder
       = new WebSocketUpgradeHandler.Builder();
 
