@@ -16,22 +16,15 @@ import org.eclipse.jetty.websocket.client.io.UpgradeListener;
 public class WsUpgradeLogger implements UpgradeListener {
 
   private static final Logger LOG = Logger.getLogger(WsUpgradeLogger.class.getName());
-  static {
-    LOG.setLevel(Level.INFO);
-  }
-  private final Level debugRestLevel;
+  private final Level debugLevel;
 
-  public WsUpgradeLogger(Level debugRestLevel) {
-    if (debugRestLevel == null) {
-      this.debugRestLevel = Level.SEVERE;
-    } else {
-      this.debugRestLevel = debugRestLevel;
-    }
+  public WsUpgradeLogger(Level debugLevel) {
+    this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
+    LOG.setLevel(this.debugLevel);
   }
 
   @Override
   public void onHandshakeRequest(UpgradeRequest req) {
-    if (LOG.isLoggable(debugRestLevel)) {
       StringBuilder sb = new StringBuilder();
       sb.append("REQUEST [\n  Url=");
       sb.append(req.getRequestURI());
@@ -60,13 +53,11 @@ public class WsUpgradeLogger implements UpgradeListener {
         sb.append("\n");
       }
       sb.append("]");
-      LOG.log(debugRestLevel, sb.toString());
-    }
+      LOG.info(sb.toString());
   }
 
   @Override
   public void onHandshakeResponse(UpgradeResponse resp) {
-    if (LOG.isLoggable(debugRestLevel)) {
       StringBuilder sb = new StringBuilder();
       sb.append("RESPONSE [\n");
       sb.append("  Headers:\n");
@@ -85,8 +76,6 @@ public class WsUpgradeLogger implements UpgradeListener {
       sb.append(resp.getAcceptedSubProtocol());
       sb.append("\n");
       sb.append("]");
-      LOG.log(debugRestLevel, sb.toString());
-    }
+      LOG.info(sb.toString());
   }
-
 }
