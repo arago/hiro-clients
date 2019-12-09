@@ -23,9 +23,7 @@
     <javaee-web-api-version>7.0</javaee-web-api-version>
     <log4j-version>1.2.16</log4j-version>
     <!-- override parent -->
-    <hiro-client-version>2.0.4-SNAPSHOT</hiro-client-version>
-    <hiro-admin-client-version>2.0.4-SNAPSHOT</hiro-admin-client-version>
-    <hiro-action-client-version>2.0.4-SNAPSHOT</hiro-action-client-version>
+    <hiro-client-version>${project.version}</hiro-client-version>
     <!-- groovy stuff below -->
     <commons-cli-version>1.4</commons-cli-version>
     <groovy-version>2.5.5</groovy-version>
