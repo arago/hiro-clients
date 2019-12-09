@@ -1,5 +1,6 @@
 package co.arago.hiro.client.auth;
 
+import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
 import static co.arago.hiro.client.util.Helper.notEmpty;
@@ -45,8 +46,6 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
   private final String apiUrl;
   protected final String clientSecret;
   protected final String clientId;
-  protected boolean debugRest = false;
-  protected Level debugRestLevel = Level.OFF;
 
   private volatile String currentToken;
   private String refreshToken;
@@ -63,9 +62,8 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     this.clientId = notEmpty(clientId, "clientId");
     this.clientSecret = notEmpty(clientSecret, "clientSecret");
     this.client = client == null ? HttpClientHelper.newClient(trustAllCerts) : client;
-    if (debugLevel != null && !Level.OFF.equals(debugLevel)) {
-      this.debugRest = true;
-      this.debugRestLevel = debugLevel;
+    if (debugLevel != null) {
+      LOG.setLevel(debugLevel);
     }
     if (apiVersion != null && !apiVersion.isEmpty()) {
       this.apiUrl = StringUtils.join(HiroCollections.newList(API_PREFIX, apiVersion, API_SUFFIX), "/");
@@ -80,8 +78,8 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     final BoundRequestBuilder builder = newRequest(data, apiUrl + "/app");
 
     try {
-      if (debugRest) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, debugRestLevel);
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+        HttpClientHelper.debugRequest(builder.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
       }
 
       final Response response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
@@ -128,8 +126,8 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
     Response response;
     try {
-      if (debugRest) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, debugRestLevel);
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+        HttpClientHelper.debugRequest(builder.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
       }
 
       response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
@@ -175,8 +173,8 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
   }
 
   private Response checkResponse(final Response response) {
-    if (debugRest) {
-      HttpClientHelper.debugResponse(response, LOG, debugRestLevel);
+    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+      HttpClientHelper.debugResponse(response, LOG, HiroClient.DEBUG_REST_LEVEL);
     }
 
     if (response.getStatusCode() != 200) {

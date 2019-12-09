@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import co.arago.hiro.client.api.HiroClient;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.eclipse.jetty.websocket.api.UpgradeResponse;
 import org.eclipse.jetty.websocket.client.io.UpgradeListener;
@@ -19,19 +21,16 @@ public class WsUpgradeLogger implements UpgradeListener {
   static {
     LOG.setLevel(Level.INFO);
   }
-  private final Level debugRestLevel;
 
   public WsUpgradeLogger(Level debugRestLevel) {
-    if (debugRestLevel == null) {
-      this.debugRestLevel = Level.SEVERE;
-    } else {
-      this.debugRestLevel = debugRestLevel;
+    if (debugRestLevel != null) {
+      LOG.setLevel(debugRestLevel);
     }
   }
 
   @Override
   public void onHandshakeRequest(UpgradeRequest req) {
-    if (LOG.isLoggable(debugRestLevel)) {
+    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
       StringBuilder sb = new StringBuilder();
       sb.append("REQUEST [\n  Url=");
       sb.append(req.getRequestURI());
@@ -60,13 +59,13 @@ public class WsUpgradeLogger implements UpgradeListener {
         sb.append("\n");
       }
       sb.append("]");
-      LOG.log(debugRestLevel, sb.toString());
+      LOG.log(HiroClient.DEBUG_REST_LEVEL, sb.toString());
     }
   }
 
   @Override
   public void onHandshakeResponse(UpgradeResponse resp) {
-    if (LOG.isLoggable(debugRestLevel)) {
+    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
       StringBuilder sb = new StringBuilder();
       sb.append("RESPONSE [\n");
       sb.append("  Headers:\n");
@@ -85,7 +84,7 @@ public class WsUpgradeLogger implements UpgradeListener {
       sb.append(resp.getAcceptedSubProtocol());
       sb.append("\n");
       sb.append("]");
-      LOG.log(debugRestLevel, sb.toString());
+      LOG.log(HiroClient.DEBUG_REST_LEVEL, sb.toString());
     }
   }
 

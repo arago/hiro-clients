@@ -81,7 +81,8 @@ public class DefaultHiroClient implements HiroClient {
     this.restApiUrl = restApiUrl;
     // used for event stream:
     this.trustAllCerts = trustAllCerts;
-    this.debugLevel = debugLevel != null ? debugLevel : Level.FINEST;
+    this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
+    LOG.setLevel(this.debugLevel);
   }
   
   @Override
@@ -328,7 +329,7 @@ public class DefaultHiroClient implements HiroClient {
         + StringUtils.join(HiroCollections.newList(API_PREFIX, EVENT_STREAM_VERSION, EVENT_STREAM_SUFFIX), "/")
         + prepareEventStreamParams(requestParameters));
       final ClientUpgradeRequest clientUpgradeRequest = new ClientUpgradeRequest();
-      if (LOG.isLoggable(debugLevel)) {
+      if (LOG.isLoggable(DEBUG_REST_LEVEL)) {
         StringBuilder sb = new StringBuilder();
         sb.append("WS-CONNECT [\n  Uri=");
         sb.append(uri.toString());
@@ -339,13 +340,13 @@ public class DefaultHiroClient implements HiroClient {
           sb.append(el.getValue());
         }
         sb.append("\n]");
-        LOG.log(debugLevel, sb.toString());
+        LOG.log(DEBUG_REST_LEVEL, sb.toString());
       }
       clientUpgradeRequest.setRequestURI(uri);
       clientUpgradeRequest.setSubProtocols(getSubProtocols());
       UpgradeListener upgrListener = new WsUpgradeLogger(debugLevel);
       try (Session session = webSocketClient.connect(new SimpleWsListener(requestParameters.get("filter"), dataListener, logListener), uri, clientUpgradeRequest, upgrListener).get()) {
-        if (LOG.isLoggable(debugLevel)) {
+        if (LOG.isLoggable(DEBUG_REST_LEVEL)) {
           StringBuilder sb = new StringBuilder();
           sb.append("WS-CONNECT [\n  Remote=");
           sb.append(session.getRemoteAddress().getHostName());
@@ -354,7 +355,7 @@ public class DefaultHiroClient implements HiroClient {
           sb.append("\n  IdleTimeout=");
           sb.append(session.getIdleTimeout());
           sb.append("\n]");
-          LOG.log(debugLevel, sb.toString());
+          LOG.log(DEBUG_REST_LEVEL, sb.toString());
         }
         Thread.sleep(listeningTime);
       }
