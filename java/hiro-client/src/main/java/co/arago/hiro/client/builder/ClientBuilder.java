@@ -24,7 +24,7 @@ public class ClientBuilder {
   protected TokenProvider tokenProvider;
   protected AsyncHttpClient client;
   protected boolean trustAllCerts;
-  protected Level debugLevel;
+  protected Level debugLevel = Level.OFF;
   protected int timeout = 0; // msecs
   protected String apiVersion = null; // enforce  /api/<vers>/graph
 
