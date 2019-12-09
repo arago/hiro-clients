@@ -5,12 +5,18 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  *
  * @author fotto
  */
 public interface HiroClient extends Closeable {
+
+  // logging level required to see low level
+  // request and responses
+  // use a lower level to suppress it
+  public static Level DEBUG_REST_LEVEL = Level.INFO;
 
   enum Direction {
     in, out, both;

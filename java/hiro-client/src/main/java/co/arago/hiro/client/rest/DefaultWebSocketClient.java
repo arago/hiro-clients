@@ -1,5 +1,6 @@
 package co.arago.hiro.client.rest;
 
+import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.util.Helper;
@@ -27,17 +28,15 @@ public class DefaultWebSocketClient implements WebSocketClient {
   private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
   private final WebSocket webSocketClient;
   private final AtomicInteger idCounter;
-  private final Level debugLevel;
 
   public DefaultWebSocketClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
                                 Level debugLevel, int timeout, Listener<String> dataListener,
                                 Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
     this.idCounter = new AtomicInteger();
     if (debugLevel != null) {
-      this.debugLevel = debugLevel;
-    } else {
-      this.debugLevel = Level.OFF;
+      LOG.setLevel(debugLevel);
     }
+
     WebSocketUpgradeHandler.Builder upgradeHandlerBuilder
       = new WebSocketUpgradeHandler.Builder();
 
@@ -70,8 +69,11 @@ public class DefaultWebSocketClient implements WebSocketClient {
 
         @Override
         public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+            LOG.log(HiroClient.DEBUG_REST_LEVEL, "Response from WS-API: "+payload);
+          }
           dataListener.process(payload);
-      }
+        }
 
       @Override
       public void onPingFrame(byte[] payload) {
@@ -122,8 +124,8 @@ public class DefaultWebSocketClient implements WebSocketClient {
       request.put("type", type);
       request.put("headers", headers);
       request.put("body", body);
-      if (LOG.isLoggable(debugLevel)) {
-        LOG.log(debugLevel, Helper.composeJson(request));
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+        LOG.log(HiroClient.DEBUG_REST_LEVEL, "Request to WS-API: "+Helper.composeJson(request));
       }
       webSocketClient.sendTextFrame(Helper.composeJson(request));
       return id;
