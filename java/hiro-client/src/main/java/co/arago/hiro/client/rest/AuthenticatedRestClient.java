@@ -51,7 +51,6 @@ public class AuthenticatedRestClient implements RestClient {
   private final String apiPath;
   private final int timeout;
   private final AsyncHttpClient client;
-  private final boolean debugRest;
   private final Level debugRestLevel;
   private final TokenProvider tokenProvider;
   private final boolean trustAllCerts;
@@ -75,9 +74,8 @@ public class AuthenticatedRestClient implements RestClient {
     this.timeout = timeout > 0 ? timeout : TIMEOUT;
     this.restApiUrl = notEmpty(restApiUrl, "restApiUrl").endsWith("/") ? restApiUrl.substring(0, restApiUrl.length() - 1) : restApiUrl;
     this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, this.timeout) : client;
-    this.debugRest = debugLevel != null && !Level.OFF.equals(debugLevel);
-    this.debugRestLevel = debugRest ? debugLevel : Level.OFF;
-    LOG.setLevel(debugLevel);
+    this.debugRestLevel = debugLevel != null ? debugLevel : Level.OFF;
+    LOG.setLevel(this.debugRestLevel);
     this.tokenProvider = notNull(tokenProvider, "tokenProvider");
     if (apiPath != null && !apiPath.isEmpty()) {
       this.apiPath = apiPath;
@@ -218,7 +216,7 @@ public class AuthenticatedRestClient implements RestClient {
     addToken(prepareGet);
 
     try {
-      if (debugRest) {
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
         HttpClientHelper.debugRequest(prepareGet.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
       }
       final Response r = prepareGet.execute().get(timeout, TimeUnit.MILLISECONDS);
@@ -253,7 +251,7 @@ public class AuthenticatedRestClient implements RestClient {
       = client().prepareGet(composeUrl(path)).setFollowRedirect(false);
     Response response = runBasicRequest(prepareGet, null, params);
     if (REDIRECT_CODES.contains(response.getStatusCode())) {
-      if (debugRest) {
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
         LOG.log(HiroClient.DEBUG_REST_LEVEL, "Found redirect with code={0} location={1}",
           new Object[]{response.getStatusCode(), response.getHeader("Location")});
       }
@@ -314,7 +312,7 @@ public class AuthenticatedRestClient implements RestClient {
       addDefaultHeaders(builder, parameters);
       addParameters(builder, parameters);
 
-      if (debugRest) {
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
         HttpClientHelper.debugRequest(builder.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
       }
 
