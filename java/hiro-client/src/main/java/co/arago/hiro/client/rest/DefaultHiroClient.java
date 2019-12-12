@@ -35,7 +35,7 @@ public class DefaultHiroClient implements HiroClient {
   
   private static final Logger LOG = Logger.getLogger(DefaultHiroClient.class.getName());
   // default API: "/", versioned API: /api/<version>/graph/
-  public static final String DEFAULT_API_VERSION = "7.0";
+  public static final String DEFAULT_API_VERSION = "7.1";
   public static final String API_PREFIX = "api";
   public static final String API_HELP_PREFIX = "help";
   public static final String API_SUFFIX = "graph";
