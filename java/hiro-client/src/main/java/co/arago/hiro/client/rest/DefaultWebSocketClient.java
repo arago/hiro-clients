@@ -108,9 +108,9 @@ public class DefaultWebSocketClient implements WebSocketClient {
       sb.append("/");
       sb.append(API_PREFIX);
       sb.append("/");
-      sb.append(DEFAULT_API_VERSION);
-      sb.append("/");
       sb.append(API_SUFFIX);
+      sb.append("/");
+      sb.append(DEFAULT_API_VERSION);
     }
     return sb.toString();
   }

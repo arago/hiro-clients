@@ -28,8 +28,8 @@ import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.eclipse.jetty.websocket.client.io.UpgradeListener;
 
-import static co.arago.hiro.client.api.RestClient.*;
 import static co.arago.hiro.client.util.Helper.*;
+import static co.arago.hiro.client.api.RestClient.*;
 
 public class DefaultHiroClient implements HiroClient {
   
@@ -72,7 +72,7 @@ public class DefaultHiroClient implements HiroClient {
     } else if (apiVersion != null && apiVersion.isEmpty()) {
       apiPath = "";//6.0 graph
     } else {
-      apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, DEFAULT_API_VERSION, API_SUFFIX), "/");
+      apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), "/");
     }
     
     this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, apiPath);
@@ -326,7 +326,7 @@ public class DefaultHiroClient implements HiroClient {
     try {
       webSocketClient.start();
       URI uri = new URI(this.restApiUrl.replace("http", "ws") + "/"
-        + StringUtils.join(HiroCollections.newList(API_PREFIX, EVENT_STREAM_VERSION, EVENT_STREAM_SUFFIX), "/")
+        + StringUtils.join(HiroCollections.newList(API_PREFIX, EVENT_STREAM_SUFFIX, EVENT_STREAM_VERSION), "/")
         + prepareEventStreamParams(requestParameters));
       final ClientUpgradeRequest clientUpgradeRequest = new ClientUpgradeRequest();
       if (LOG.isLoggable(DEBUG_REST_LEVEL)) {
