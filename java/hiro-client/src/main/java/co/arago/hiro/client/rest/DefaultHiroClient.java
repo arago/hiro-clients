@@ -76,7 +76,7 @@ public class DefaultHiroClient implements HiroClient {
     }
     
     this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, apiPath);
-    this.varClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_VERSION), "/"));
+    this.varClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION), "/"));
     this.tokenProvider = tokenProvider;
     this.restApiUrl = restApiUrl;
     // used for event stream:
@@ -297,7 +297,7 @@ public class DefaultHiroClient implements HiroClient {
   
   @Override
   public Map setVariable(Map kwargs) {
-    String result = varClient.put(HiroCollections.newList(VAR_API_SUFFIX), Helper.composeJson(notNull(kwargs, "kwargs")), null);
+    String result = varClient.put(HiroCollections.newList(), Helper.composeJson(notNull(kwargs, "kwargs")), null);
     return Helper.parseJsonBody(result);
   }
   
@@ -305,7 +305,7 @@ public class DefaultHiroClient implements HiroClient {
   public Map getVariable(String name) {
     Map<String, String> parameters = HiroCollections.newMap();
     parameters.put(QUERY_PARAM_NAME, notEmpty(name, "name"));
-    String result = varClient.get(HiroCollections.newList(VAR_API_SUFFIX, URL_SUBPATH_VAR_DEFINE), parameters);
+    String result = varClient.get(HiroCollections.newList(URL_SUBPATH_VAR_DEFINE), parameters);
     return Helper.parseJsonBody(result);
   }
   
