@@ -6,8 +6,9 @@
 package co.arago.hiro.client;
 
 import co.arago.hiro.client.api.HiroClient;
-import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.Helper;
+import co.arago.hiro.client.util.HiroCollections;
+import co.arago.hiro.client.util.HiroException;
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.IStatus;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
@@ -22,11 +23,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static co.arago.hiro.client.rest.DefaultHiroClient.DEFAULT_API_VERSION;
-import static co.arago.hiro.client.rest.DefaultHiroClient.API_PREFIX;
-import static co.arago.hiro.client.rest.DefaultHiroClient.API_SUFFIX;
-import co.arago.hiro.client.util.HiroCollections;
+import net.minidev.json.JSONValue;
 import org.apache.commons.lang.StringUtils;
+
+import static co.arago.hiro.client.rest.DefaultHiroClient.*;
 
 /**
  *
@@ -34,7 +34,7 @@ import org.apache.commons.lang.StringUtils;
  */
 public class FakeHiroServer extends NanoHTTPD {
 
-    final class Result {
+  final class Result {
         private final IStatus status;
       private final String message;
 
@@ -42,7 +42,7 @@ public class FakeHiroServer extends NanoHTTPD {
             this.message = message;
             this.status = status;
         }
-        
+
         public IStatus getStatus() {
             return status;
         }
@@ -54,14 +54,13 @@ public class FakeHiroServer extends NanoHTTPD {
 
     private static final String FAILURE_MSG = "operation failed";
   private static final String ID_ATTR = "ogit/_id";
-  private static final String URL_PREFIX = "/"
-    + StringUtils.join(HiroCollections.newList(API_PREFIX, DEFAULT_API_VERSION, API_SUFFIX), "/");
+  private static final String URL_PREFIX = "/" + StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), "/");
 
     private final ConcurrentHashMap<String, String> vertices = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, List<String>> edges = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> blobs = new ConcurrentHashMap<>();
 
-    private static Level defaultLevel = Level.INFO;
+  private static final Level defaultLevel = Level.INFO;
     private static final Logger LOG = Logger.getLogger(FakeHiroServer.class.getName());
 
     public FakeHiroServer(int port) throws IOException {
@@ -106,14 +105,14 @@ public class FakeHiroServer extends NanoHTTPD {
       Result result;
       String uri = stripUri(session.getUri());
       LOG.log(defaultLevel, "GET " + uri);
-        String[] split = uri.split("/");
+      String[] split = uri.split("/");
         if (split.length > 2) {
             if (split[1].equals(HiroClient.URL_PATH_QUERY)) {
                 LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_QUERY);
-                result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else if (split[1].equals(HiroClient.URL_PATH_VARIABLES)) {
                 LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_VARIABLES);
-                result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else {
                 // assume split[1] is a vertex
                 if (split[2].equals(HiroClient.URL_PATH_HISTORY)) {
@@ -121,23 +120,23 @@ public class FakeHiroServer extends NanoHTTPD {
                     result = getVertexHistory(split[1], session.getParms());
                 } else if (split[2].equals(HiroClient.URL_PATH_VALUES)) {
                     LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_VALUES);
-                    result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+                  result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
                 } else if (split[2].equals(HiroClient.URL_PATH_ATTACHMENT)) {
                     LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_ATTACHMENT);
-                    result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+                  result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
                 } else {
                     // assume neighbour query
                     LOG.log(defaultLevel, "GET Vertex Neighbours");
-                    result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+                  result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
                 }
             }
         } else {
             if (split[1].equals(HiroClient.URL_PATH_INFO)) {
                 LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_INFO);
-                result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else if (split[1].equals(HiroClient.URL_PATH_ME)) {
                 LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_ME);
-                result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else if (split[1].equals(HiroClient.URL_PATH_EVENTS)) {
                 LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_EVENTS);
                 result = getEvents(session.getParms());
@@ -169,7 +168,7 @@ public class FakeHiroServer extends NanoHTTPD {
                 result = doConnect(split[2], readBody(session.getInputStream()));
             } else if (split[1].equals(HiroClient.URL_PATH_QUERY)) {
                 LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_QUERY);
-                result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else if (split[2].equals(HiroClient.URL_PATH_VALUES)) {
                 LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_VALUES);
                 result = uploadValues(split[1], readBody(session.getInputStream()));
@@ -177,7 +176,7 @@ public class FakeHiroServer extends NanoHTTPD {
                 LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_ATTACHMENT);
                 result = uploadContent(split[1], readBody(session.getInputStream()));
             } else {
-                result = new Result(Status.INTERNAL_ERROR, "Unknown operation for uri "+uri);
+              result = new Result(Status.INTERNAL_ERROR, asJsonError("Unknown operation for uri " + uri));
             }
         } else {
             // assume vertex updata
@@ -222,7 +221,7 @@ public class FakeHiroServer extends NanoHTTPD {
 
     private Result getVertex(String id, Map<String, String> params) {
         if (!vertices.containsKey(id)) {
-            return new Result(Status.NOT_FOUND, "vertex " + id + " does not exist");
+          return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
         }
         return new Result(Status.OK, vertices.get(id));
     }
@@ -231,7 +230,7 @@ public class FakeHiroServer extends NanoHTTPD {
         // in this fake we always have only one entry in the history
         // hence we ignore the params
         if (!vertices.containsKey(id)) {
-            return new Result(Status.NOT_FOUND, "vertex " + id + " does not exist");
+          return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
         }
         return new Result(Status.OK, "{\"" + HiroClient.JSON_LIST_INDICATOR + "\":[" + vertices.get(id) + "]}");
     }
@@ -270,7 +269,7 @@ public class FakeHiroServer extends NanoHTTPD {
             vertices.put(id, Helper.composeJson(m));
             return new Result(Status.OK, vertices.get(id));
         } else {
-            return new Result(Status.NOT_FOUND, "vertex " + id + " does not exist");
+          return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
         }
     }
 
@@ -279,10 +278,10 @@ public class FakeHiroServer extends NanoHTTPD {
         String outId = (String) m.get("out");
         String inId = (String) m.get("in");
         if (!vertices.containsKey(outId)) {
-            return new Result(Status.NOT_FOUND, "out vertex " + outId + " does not exist");
+          return new Result(Status.NOT_FOUND, asJsonError("out vertex " + outId + " does not exist"));
         }
         if (!vertices.containsKey(inId)) {
-            return new Result(Status.NOT_FOUND, "in vertex " + inId + " does not exist");
+          return new Result(Status.NOT_FOUND, asJsonError("in vertex " + inId + " does not exist"));
         }
         String edgeId = Helper.composeEdgeId(outId, edgeType, outId);
         edges.put(edgeId, Arrays.asList(outId, inId));
@@ -314,22 +313,22 @@ public class FakeHiroServer extends NanoHTTPD {
             edges.remove(id);
             return new Result(Status.OK, result);
         } else {
-            return new Result(Status.NOT_FOUND, "item " + id + " does not exist");
+          return new Result(Status.NOT_FOUND, asJsonError("item " + id + " does not exist"));
         }
     }
 
     private Result uploadValues(String id, String json) {
         // in the fake we don't care about vertex type
-        return new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+        return new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
     }
 
     private Result uploadContent(String id, String content) {
         // in the fake we don't care about vertex type
-        return new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+        return new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
     }
 
     private Result setVariable(String json) {
-        return new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
+      return new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
     }
 
     private String readBody(InputStream is) throws IOException {
@@ -356,5 +355,9 @@ public class FakeHiroServer extends NanoHTTPD {
         m.put("ogit/_edge-id", id);
         return Helper.composeJson(m);
     }
+
+  private String asJsonError(String msg) {
+    return JSONValue.toJSONString(HiroCollections.newMap("error", msg));
+  }
 
 }

@@ -66,9 +66,9 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
       LOG.setLevel(debugLevel);
     }
     if (apiVersion != null && !apiVersion.isEmpty()) {
-      this.apiUrl = StringUtils.join(HiroCollections.newList(API_PREFIX, apiVersion, API_SUFFIX), "/");
+      this.apiUrl = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, apiVersion), "/");
     } else {
-      this.apiUrl = StringUtils.join(HiroCollections.newList(API_PREFIX, DEFAULT_API_VERSION, API_SUFFIX), "/");
+      this.apiUrl = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), "/");
     }
   }
 
