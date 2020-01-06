@@ -235,7 +235,7 @@ public class AuthenticatedRestClient implements RestClient {
       url.append("/");
       url.append(apiPath);
     }
-    for (String part : notEmpty(parts, "parts")) {
+    for (String part : notNull(parts, "parts")) {
       try {
         url.append("/");
         url.append(URLEncoder.encode(part, "UTF-8"));
