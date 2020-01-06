@@ -211,6 +211,7 @@ public interface OGITConstants {
     String AUTH_ACCOUNT_COOKIES = NAMESPACE_AUTH_ACCOUNT + "allowCookies";
     String AUTH_ACCOUNT_DISPLAYNAME = NAMESPACE_AUTH_ACCOUNT + "displayName";
     String AUTH_ACCOUNT_STATUS_REASON = NAMESPACE_AUTH_ACCOUNT + "statusReason";
+    String AUTH_ACCOUNT_DEFAULT_SCOPE = NAMESPACE_AUTH_ACCOUNT + "defaultScope";
     // free attributes
     String FREE_ATTRIBUTE_IDENTITY = "/identity";
     String FREE_ATTRIBUTE_PROFILESET = "/profileSet";
