@@ -3,7 +3,6 @@ package co.arago.hiro.client.auth;
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
-import static co.arago.hiro.client.util.Helper.notEmpty;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
@@ -21,12 +20,14 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
 
+import static co.arago.hiro.client.util.Helper.*;
+
 /**
  *
  */
 public abstract class AbstractTokenProvider implements TokenProvider, Closeable {
 
-  public static final String DEFAULT_API_VERSION = "6";
+  public static final String DEFAULT_API_VERSION = "6.1";
   public static final String API_PREFIX = "/api";
   public static final String API_SUFFIX = "auth";
 
