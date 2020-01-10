@@ -39,12 +39,15 @@ public class DefaultHiroClient implements HiroClient {
   public static final String API_PREFIX = "api";
   public static final String API_HELP_PREFIX = "help";
   public static final String API_SUFFIX = "graph";
+  public static final String AUTH_API_SUFFIX = "auth";
+  public static final String AUTH_API_VERSION = "6.1";
   public static final String VAR_API_VERSION = "6";
   public static final String VAR_API_SUFFIX = URL_PATH_VARIABLES;
   public static final String EVENT_STREAM_VERSION = "6.1";
   public static final String EVENT_STREAM_SUFFIX = "events-ws";
   private final AuthenticatedRestClient restClient;
   private final AuthenticatedRestClient varClient;
+  private final AuthenticatedRestClient authClient;
   private final TokenProvider tokenProvider;
   private final String restApiUrl;
   // only for getEventStream:
@@ -74,9 +77,10 @@ public class DefaultHiroClient implements HiroClient {
     } else {
       apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), "/");
     }
-    
+
     this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, apiPath);
     this.varClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION), "/"));
+    this.authClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION), "/"));
     this.tokenProvider = tokenProvider;
     this.restApiUrl = restApiUrl;
     // used for event stream:
@@ -89,6 +93,7 @@ public class DefaultHiroClient implements HiroClient {
   public void close() throws IOException {
     restClient.close();
     varClient.close();
+    authClient.close();
   }
   
   @Override
@@ -145,13 +150,8 @@ public class DefaultHiroClient implements HiroClient {
   
   @Override
   public Map me(Map<String, String> queryParams) {
-    String result = restClient.get(HiroCollections.newList(URL_PATH_ME), queryParams);
+    String result = authClient.get(HiroCollections.newList(URL_PATH_ME), queryParams);
     return Helper.parseJsonBody(result);
-  }
-  
-  @Override
-  public Map me() {
-    return me(HiroCollections.newMap());
   }
   
   @Override
@@ -435,7 +435,7 @@ public class DefaultHiroClient implements HiroClient {
     final List paths = HiroCollections.newList();
     paths.add(URL_PATH_ME);
     paths.add(URL_PATH_PROFILE);
-    final String result = restClient.get(paths, HiroCollections.newMap());
+    final String result = authClient.get(paths, HiroCollections.newMap());
     return Helper.parseJsonBody(result);
   }
   
@@ -444,7 +444,7 @@ public class DefaultHiroClient implements HiroClient {
     final List paths = HiroCollections.newList();
     paths.add(URL_PATH_ME);
     paths.add(URL_PATH_PROFILE);
-    final String result = restClient.post(paths, Helper.composeJson(attributes), attributes);
+    final String result = authClient.post(paths, Helper.composeJson(attributes), attributes);
     return Helper.parseJsonBody(result);
   }
   
@@ -453,7 +453,7 @@ public class DefaultHiroClient implements HiroClient {
     final List paths = HiroCollections.newList();
     paths.add(URL_PATH_ME);
     paths.add(URL_PATH_AVATAR);
-    return restClient.getBinaryFromStaticLocation(restClient.getRedirectLocation(paths, HiroCollections.newMap()));
+    return restClient.getBinaryFromStaticLocation(authClient.getRedirectLocation(paths, HiroCollections.newMap()));
   }
   
   @Override
@@ -461,7 +461,7 @@ public class DefaultHiroClient implements HiroClient {
     final List paths = HiroCollections.newList();
     paths.add(URL_PATH_ME);
     paths.add(URL_PATH_ACCOUNT);
-    final String result = restClient.get(paths, requestParameters);
+    final String result = authClient.get(paths, requestParameters);
     return Helper.parseJsonBody(result);
   }
   
@@ -473,7 +473,7 @@ public class DefaultHiroClient implements HiroClient {
     final Map params = HiroCollections.newMap();
     params.put("oldPassword", oldPassword);
     params.put("newPassword", newPassword);
-    final String result = restClient.put(paths, Helper.composeJson(params), null);
+    final String result = authClient.put(paths, Helper.composeJson(params), null);
     return Helper.parseJsonBody(result);
   }
   
@@ -486,7 +486,7 @@ public class DefaultHiroClient implements HiroClient {
     if (includeVirtualTeams) {
       params.put(QUERY_PARAM_VIRTUAL_TEAMS, "true");
     }
-    final String result = restClient.get(paths, params);
+    final String result = authClient.get(paths, params);
     return Helper.parseItemListOfMaps(result);
   }
   
@@ -496,7 +496,7 @@ public class DefaultHiroClient implements HiroClient {
     paths.add(URL_PATH_ME);
     paths.add(URL_PATH_ROLES);
     final Map params = HiroCollections.newMap();
-    final String result = restClient.get(paths, params);
+    final String result = authClient.get(paths, params);
     return Helper.parseItemListOfStrings(result);
   }
   
@@ -505,6 +505,6 @@ public class DefaultHiroClient implements HiroClient {
     final List paths = HiroCollections.newList();
     paths.add(URL_PATH_ME);
     paths.add(URL_PATH_AVATAR);
-    restClient.putBinary(paths, is, HiroCollections.newMap(HEADER_CONTENT_TYPE, contentType));
+    authClient.putBinary(paths, is, HiroCollections.newMap(HEADER_CONTENT_TYPE, contentType));
   }
 }

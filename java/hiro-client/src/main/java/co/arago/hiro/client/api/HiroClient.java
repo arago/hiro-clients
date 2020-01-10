@@ -145,8 +145,6 @@ public interface HiroClient extends Closeable {
   // TODO: add variable search methods?
 
   // special calls
-  Map me();
-
   Map me(Map<String, String> requestParameters);
 
   Map info();

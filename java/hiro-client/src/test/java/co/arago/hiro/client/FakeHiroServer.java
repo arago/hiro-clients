@@ -134,9 +134,6 @@ public class FakeHiroServer extends NanoHTTPD {
             if (split[1].equals(HiroClient.URL_PATH_INFO)) {
                 LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_INFO);
               result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
-            } else if (split[1].equals(HiroClient.URL_PATH_ME)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_ME);
-              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else if (split[1].equals(HiroClient.URL_PATH_EVENTS)) {
                 LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_EVENTS);
                 result = getEvents(session.getParms());
