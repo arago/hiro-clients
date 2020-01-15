@@ -54,7 +54,6 @@ public interface HiroClient extends Closeable {
   String URL_SUBPATH_VAR_DEFINE = "define";
   String URL_PATH_QUERY = "query";
   String URL_PATH_ME = "me";
-  String URL_PATH_INFO = "info";
   String URL_PATH_VERSION = "version";
   String URL_PATH_XID = "xid";
   String URL_PATH_LOGS = "logs";
@@ -145,10 +144,6 @@ public interface HiroClient extends Closeable {
   // TODO: add variable search methods?
 
   // special calls
-  Map me(Map<String, String> requestParameters);
-
-  Map info();
-
   Map apiVersion();
 
   // get ws event stream
