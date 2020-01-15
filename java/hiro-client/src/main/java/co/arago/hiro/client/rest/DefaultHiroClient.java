@@ -149,19 +149,6 @@ public class DefaultHiroClient implements HiroClient {
   }
   
   @Override
-  public Map me(Map<String, String> queryParams) {
-    String result = authClient.get(HiroCollections.newList(URL_PATH_ME), queryParams);
-    return Helper.parseJsonBody(result);
-  }
-  
-  @Override
-  public Map info() {
-    Map<String, String> params = HiroCollections.newMap();
-    String result = restClient.get(HiroCollections.newList(URL_PATH_INFO), params);
-    return Helper.parseJsonBody(result);
-  }
-  
-  @Override
   public Map apiVersion() {
     Map<String, String> params = HiroCollections.newMap();
     String result = restClient.get(StringUtils.join(HiroCollections.newList(API_HELP_PREFIX, URL_PATH_VERSION), "/"), params);
