@@ -7,11 +7,12 @@ import co.arago.hiro.client.util.Helper;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.Listener;
+import co.arago.hiro.client.util.Throwables;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minidev.json.JSONValue;
@@ -20,124 +21,227 @@ import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
-public class DefaultWebSocketClient implements WebSocketClient {
+public final class DefaultWebSocketClient implements WebSocketClient {
 
+  private static final int MAX_RETRIES = 5;
   public static final String DEFAULT_API_VERSION = "6.1";
   public static final String API_PREFIX = "api";
   public static final String API_SUFFIX = "graph-ws";
   private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
-  private final WebSocket webSocketClient;
-  private final AtomicInteger idCounter;
+  private volatile WebSocket webSocketClient;
+  private volatile boolean running = true;
+  private int retries = 0;
+  private int idCounter = 0;
+  private final String restApiUrl;
+  private final Listener<String> loglistener;
+  private final Listener<String> dataListener;
+  private final AsyncHttpClient client;
+  private final TokenProvider tokenProvider;
+  private final int timeout;
 
   public DefaultWebSocketClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
-                                Level debugLevel, int timeout, Listener<String> dataListener,
-                                Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
-    this.idCounter = new AtomicInteger();
+          Level debugLevel, int timeout, Listener<String> dataListener,
+          Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
     if (debugLevel != null) {
       LOG.setLevel(debugLevel);
     }
 
+    this.restApiUrl = restApiUrl;
+    this.tokenProvider = tokenProvider;
+    this.timeout = timeout;
+    this.loglistener = loglistener;
+    this.dataListener = dataListener;
+    this.client = client;
+
+    connect(false);
+  }
+
+  private void connect(boolean waitForIt) {
+    if (!running) {
+      return;
+    }
+
+    close0();
+
+    if (waitForIt) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException ex) {
+        close();
+
+        Throwables.unchecked(ex);
+      }
+    }
+
     WebSocketUpgradeHandler.Builder upgradeHandlerBuilder
-      = new WebSocketUpgradeHandler.Builder();
+            = new WebSocketUpgradeHandler.Builder();
 
     WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
-      .addWebSocketListener(new WebSocketListener() {
-        @Override
-        public void onOpen(WebSocket websocket) {
-          final Map m = HiroCollections.newMap();
-          m.put("type", "open");
-          m.put("open", websocket.isOpen());
-          loglistener.process(JSONValue.toJSONString(m));
-        }
+            .addWebSocketListener(new WebSocketListener() {
+              @Override
+              public void onOpen(WebSocket websocket) {
+                final Map m = HiroCollections.newMap();
+                m.put("type", "open");
+                m.put("open", websocket.isOpen());
 
-        @Override
-        public void onClose(WebSocket websocket, int code, String reason) {
-          final Map m = HiroCollections.newMap();
-          m.put("type", "close");
-          m.put("code", code);
-          m.put("reason", reason);
-          loglistener.process(JSONValue.toJSONString(m));
-        }
+                process(loglistener, JSONValue.toJSONString(m));
+              }
 
-        @Override
-        public void onError(Throwable t) {
-          final Map m = HiroCollections.newMap();
-          m.put("type", "error");
-          m.put("message", t.getMessage());
-          loglistener.process(JSONValue.toJSONString(m));
-        }
+              @Override
+              public void onClose(WebSocket websocket, int code, String reason) {
+                if (running) {
+                  connect(false);
+                } else {
+                  final Map m = HiroCollections.newMap();
+                  m.put("type", "close");
+                  m.put("code", code);
+                  m.put("reason", reason);
 
-        @Override
-        public void onTextFrame(String payload, boolean finalFragment, int rsv) {
-          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-            LOG.log(HiroClient.DEBUG_REST_LEVEL, "Response from WS-API: "+payload);
-          }
-          dataListener.process(payload);
-        }
+                  process(loglistener, JSONValue.toJSONString(m));
+                }
+              }
 
-      @Override
-      public void onPingFrame(byte[] payload) {
-        webSocketClient.sendPongFrame(payload);
-      }
-      }).build();
+              @Override
+              public void onError(Throwable t) {
+                if (running) {
+                  connect(false);
+                } else {
+                  final Map m = HiroCollections.newMap();
+                  m.put("type", "error");
+                  m.put("message", t.getMessage());
+
+                  process(loglistener, JSONValue.toJSONString(m));
+                }
+              }
+
+              @Override
+              public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+                  LOG.log(HiroClient.DEBUG_REST_LEVEL, "Response from WS-API: " + payload);
+                }
+
+                process(dataListener, payload);
+              }
+
+              @Override
+              public void onPingFrame(byte[] payload) {
+                webSocketClient.sendPongFrame(payload);
+              }
+            }).build();
+
+    try {
       webSocketClient = client
-      .prepareGet(composeWsUrl(restApiUrl))
-      .addHeader("Sec-WebSocket-Protocol", "graph-2.0.0, token-" + tokenProvider.getToken())
-      .setRequestTimeout(timeout)
-      .execute(wsHandler)
-      .get();
+              .prepareGet(composeWsUrl(restApiUrl))
+              .addHeader("Sec-WebSocket-Protocol", "graph-2.0.0, token-" + tokenProvider.getToken())
+              .setRequestTimeout(timeout)
+              .execute(wsHandler)
+              .get(timeout, TimeUnit.SECONDS);
+    } catch (Throwable ex) {
+      close();
+      throw new HiroException("websocket connection failed " + this, 400, ex);
+    }
   }
 
-  private String composeWsUrl(String inUrl) throws URISyntaxException {
-    URI uri = new URI(inUrl);
-    StringBuilder sb = new StringBuilder();
-    if ("http".equals(uri.getScheme())) {
-      sb.append("ws://");
-    } else if ("https".equals(uri.getScheme())) {
-      sb.append("wss://");
-    } else {
-      sb.append(uri.getScheme());
-      sb.append("://");
+  private void process(Listener<String> listener, String payload) {
+    try {
+      listener.process(payload);
+    } catch (Throwable t) {
+      LOG.log(Level.WARNING, listener + " failed", t);
     }
-    sb.append(uri.getHost());
-    if (uri.getPort() > 0) {
-      sb.append(":");
-      sb.append(uri.getPort());
-    }
-    if (uri.getPath().isEmpty()) {
-      sb.append("/");
-      sb.append(API_PREFIX);
-      sb.append("/");
-      sb.append(API_SUFFIX);
-      sb.append("/");
-      sb.append(DEFAULT_API_VERSION);
-    }
-    return sb.toString();
   }
 
   @Override
-  public int sendMessage(String type, Map<String, String> headers, Map body) {
-    if (webSocketClient.isOpen()) {
-      final int id = idCounter.incrementAndGet();
-      final Map request = HiroCollections.newMap();
-      request.put("id", id);
-      request.put("type", type);
-      request.put("headers", headers);
-      request.put("body", body);
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        LOG.log(HiroClient.DEBUG_REST_LEVEL, "Request to WS-API: "+Helper.composeJson(request));
+  public synchronized int sendMessage(String type, Map<String, String> headers, Map body) {
+    if (webSocketClient == null || !webSocketClient.isOpen()) {
+      connect(false);
+    }
+
+    ++idCounter;
+
+    final Map request = HiroCollections.newMap();
+    request.put("id", idCounter);
+    request.put("type", type);
+    request.put("headers", headers);
+    request.put("body", body);
+
+    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+      LOG.log(HiroClient.DEBUG_REST_LEVEL, "Request to WS-API: " + Helper.composeJson(request));
+    }
+
+    try {
+      webSocketClient.sendTextFrame(Helper.composeJson(request)).get(timeout, TimeUnit.SECONDS);
+      retries = 0;
+    } catch (Throwable ex) {
+      if (retries < MAX_RETRIES) {
+        LOG.log(Level.WARNING, "send failed, retrying", ex);
+
+        ++retries;
+        connect(true);
+
+        return sendMessage(type, headers, body);
+      } else {
+        close();
+
+        return Throwables.unchecked(ex);
       }
-      webSocketClient.sendTextFrame(Helper.composeJson(request));
-      return id;
-    } else {
-      throw new HiroException("web socket connection not open", 400);
+    }
+
+    return idCounter;
+  }
+
+  @Override
+  public synchronized void close() {
+    running = false;
+
+    close0();
+  }
+  
+  private void close0()
+  {
+    if (webSocketClient != null && webSocketClient.isOpen()) {
+      try {
+        webSocketClient.sendCloseFrame(200, "OK").get(5, TimeUnit.SECONDS);
+      } catch (Throwable ignored) {
+        // blank
+      }
+    }
+
+    webSocketClient = null;
+  }
+
+  private String composeWsUrl(String inUrl) {
+    try {
+      URI uri = new URI(inUrl);
+      StringBuilder sb = new StringBuilder();
+      if ("http".equals(uri.getScheme())) {
+        sb.append("ws://");
+      } else if ("https".equals(uri.getScheme())) {
+        sb.append("wss://");
+      } else {
+        sb.append(uri.getScheme());
+        sb.append("://");
+      }
+      sb.append(uri.getHost());
+      if (uri.getPort() > 0) {
+        sb.append(":");
+        sb.append(uri.getPort());
+      }
+      if (uri.getPath().isEmpty()) {
+        sb.append("/");
+        sb.append(API_PREFIX);
+        sb.append("/");
+        sb.append(API_SUFFIX);
+        sb.append("/");
+        sb.append(DEFAULT_API_VERSION);
+      }
+      return sb.toString();
+    } catch (URISyntaxException ex) {
+      throw new RuntimeException(inUrl, ex);
     }
   }
 
   @Override
-  public void close() {
-    if (webSocketClient.isOpen()) {
-      webSocketClient.sendCloseFrame(200, "OK");
-    }
+  public String toString() {
+    return "DefaultWebSocketClient{" + "running=" + running + ", retries=" + retries + ", restApiUrl=" + restApiUrl + ", tokenProvider=" + tokenProvider + ", timeout=" + timeout + '}';
   }
 }
