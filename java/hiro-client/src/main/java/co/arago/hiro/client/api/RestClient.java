@@ -1,11 +1,11 @@
 package co.arago.hiro.client.api;
 
+import co.arago.hiro.client.util.Listener;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
-import co.arago.hiro.client.util.Listener;
 
 /**
  *

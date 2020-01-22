@@ -2,15 +2,8 @@ package co.arago.hiro.client.rest;
 
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.RestClient;
-import static co.arago.hiro.client.api.RestClient.CONTENT_TYPE_DEFAULT;
-import static co.arago.hiro.client.api.RestClient.CONTENT_TYPE_OCTECT_STREAM;
-import static co.arago.hiro.client.api.RestClient.DEFAULT_ENCODING;
-import static co.arago.hiro.client.api.RestClient.HEADER_ACCEPT;
-import static co.arago.hiro.client.api.RestClient.HEADER_CONTENT_TYPE;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.auth.FixedTokenProvider;
-import static co.arago.hiro.client.util.Helper.notEmpty;
-import static co.arago.hiro.client.util.Helper.notNull;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
@@ -41,6 +34,9 @@ import org.jsfr.json.JsonSurferJackson;
 import org.jsfr.json.NonBlockingParser;
 import org.jsfr.json.ParsingContext;
 import org.jsfr.json.SurfingConfiguration;
+
+import static co.arago.hiro.client.api.RestClient.*;
+import static co.arago.hiro.client.util.Helper.*;
 
 public class AuthenticatedRestClient implements RestClient {
 
@@ -479,9 +475,6 @@ public class AuthenticatedRestClient implements RestClient {
     }
     if (parameters != null && parameters.containsKey(HEADER_CONTENT_TYPE)) {
       builder.setHeader(HEADER_CONTENT_TYPE, parameters.remove(HEADER_CONTENT_TYPE));
-    }
-    if (parameters != null && parameters.containsKey(HEADER_IMPORT)) {
-      builder.setHeader(HEADER_IMPORT, parameters.remove(HEADER_IMPORT));
     }
     addToken(builder);
     builder.setHeader(HEADER_ACCEPT, CONTENT_TYPE_DEFAULT);
