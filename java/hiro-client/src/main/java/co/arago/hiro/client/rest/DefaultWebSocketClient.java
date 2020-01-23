@@ -48,7 +48,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
     this.restApiUrl = restApiUrl;
     this.tokenProvider = tokenProvider;
-    this.timeout = timeout;
+    this.timeout = timeout <= 0 ? 5000 : timeout;
     this.loglistener = loglistener;
     this.dataListener = dataListener;
     this.client = client;
@@ -135,10 +135,10 @@ public final class DefaultWebSocketClient implements WebSocketClient {
               .addHeader("Sec-WebSocket-Protocol", "graph-2.0.0, token-" + tokenProvider.getToken())
               .setRequestTimeout(timeout)
               .execute(wsHandler)
-              .get(timeout, TimeUnit.SECONDS);
+        .get(timeout, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
       close();
-      throw new HiroException("websocket connection failed " + this, 400, ex);
+      throw new HiroException("websocket connection failed " + this + " " + ex.getMessage(), 400, ex);
     }
   }
 
@@ -169,7 +169,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     try {
-      webSocketClient.sendTextFrame(Helper.composeJson(request)).get(timeout, TimeUnit.SECONDS);
+      webSocketClient.sendTextFrame(Helper.composeJson(request)).get(timeout, TimeUnit.MILLISECONDS);
       retries = 0;
     } catch (Throwable ex) {
       if (retries < MAX_RETRIES) {
@@ -200,7 +200,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   {
     if (webSocketClient != null && webSocketClient.isOpen()) {
       try {
-        webSocketClient.sendCloseFrame(200, "OK").get(5, TimeUnit.SECONDS);
+        webSocketClient.sendCloseFrame(200, "OK").get(timeout, TimeUnit.MILLISECONDS);
       } catch (Throwable ignored) {
         // blank
       }
