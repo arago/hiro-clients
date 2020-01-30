@@ -188,8 +188,9 @@ public class DefaultHiroClient implements HiroClient {
   @Override
   public List<Map> idQuery(List<String> vertexIds, Map<String, String> queryParams) {
     final Map map = HiroCollections.newMap(PARAM_QUERY, StringUtils.join(notEmpty(vertexIds, "vertexIds"), ","));
+    map.putAll(queryParams);
     String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_IDS),
-      Helper.composeJson(map), queryParams);
+      Helper.composeJson(map));
     return Helper.parseItemListOfMaps(result);
   }
   
