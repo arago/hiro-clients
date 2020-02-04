@@ -111,7 +111,6 @@ public interface OGITConstants {
     String OGIT_STATUS = NAMESPACE_OGIT + "status";
     String OGIT_SUBJECT = NAMESPACE_OGIT + "subject";
     String OGIT_SUBTYPE = NAMESPACE_OGIT + "subType";
-    String OGIT_TECH_CONTACT = "tech-contact";
     String OGIT_TIMESTAMP = NAMESPACE_OGIT + "timestamp";
     String OGIT_TOKEN = NAMESPACE_OGIT + "token";
     String OGIT_PARENT = NAMESPACE_OGIT + "parent";
