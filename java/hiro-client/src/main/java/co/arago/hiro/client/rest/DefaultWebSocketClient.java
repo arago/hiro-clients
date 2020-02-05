@@ -3,6 +3,7 @@ package co.arago.hiro.client.rest;
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.api.WebSocketClient;
+import co.arago.hiro.client.builder.ClientBuilder.WebsocketType;
 import co.arago.hiro.client.util.Helper;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
@@ -15,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jdk.internal.joptsimple.internal.Strings;
 import net.minidev.json.JSONValue;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ws.WebSocket;
@@ -26,7 +28,6 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private static final int MAX_RETRIES = 5;
   public static final String DEFAULT_API_VERSION = "6.1";
   public static final String API_PREFIX = "api";
-  public static final String API_SUFFIX = "graph-ws";
   private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
   private volatile WebSocket webSocketClient;
   private volatile boolean running = true;
@@ -38,9 +39,11 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private final AsyncHttpClient client;
   private final TokenProvider tokenProvider;
   private final int timeout;
+  private final WebsocketType type;
+  private final String urlParameters;
 
-  public DefaultWebSocketClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
-          Level debugLevel, int timeout, Listener<String> dataListener,
+  public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider, AsyncHttpClient client,
+          Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
           Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
     if (debugLevel != null) {
       LOG.setLevel(debugLevel);
@@ -52,6 +55,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     this.loglistener = loglistener;
     this.dataListener = dataListener;
     this.client = client;
+    this.type   = type;
+    this.urlParameters = urlParameters;
 
     connect(false);
   }
@@ -132,7 +137,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     try {
       webSocketClient = client
               .prepareGet(composeWsUrl(restApiUrl))
-              .addHeader("Sec-WebSocket-Protocol", "graph-2.0.0, token-" + tokenProvider.getToken())
+              .addHeader("Sec-WebSocket-Protocol", getProtocol() + ", token-" + tokenProvider.getToken())
               .setRequestTimeout(timeout)
               .execute(wsHandler)
         .get(timeout, TimeUnit.MILLISECONDS);
@@ -230,9 +235,26 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         sb.append("/");
         sb.append(API_PREFIX);
         sb.append("/");
-        sb.append(API_SUFFIX);
+        
+        switch(type) {
+          case Event:
+            sb.append("event-ws");
+          break;
+
+          case Graph:
+            sb.append("graph-ws");
+          default:
+            throw new IllegalArgumentException("unknown type " + type);
+        }
+        
         sb.append("/");
         sb.append(DEFAULT_API_VERSION);
+        
+        if (!Strings.isNullOrEmpty(urlParameters))
+        {
+          sb.append("?");
+          sb.append(urlParameters);
+        }
       }
       return sb.toString();
     } catch (URISyntaxException ex) {
@@ -242,6 +264,20 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
   @Override
   public String toString() {
-    return "DefaultWebSocketClient{" + "running=" + running + ", retries=" + retries + ", restApiUrl=" + restApiUrl + ", tokenProvider=" + tokenProvider + ", timeout=" + timeout + '}';
+    return "DefaultWebSocketClient{" + "running=" + running + ", retries=" + retries + ", idCounter=" + idCounter + ", restApiUrl=" + restApiUrl + ", loglistener=" + loglistener + ", dataListener=" + dataListener + ", tokenProvider=" + tokenProvider + ", timeout=" + timeout + ", type=" + type + '}';
+  }
+  
+  private String getProtocol() {
+    switch(type)
+    {
+      case Event:
+        return "events-1.0.0";
+
+      case Graph:
+        return "graph-2.0.0";
+
+      default:
+        throw new IllegalArgumentException("unknown type " + type);
+    }
   }
 }
