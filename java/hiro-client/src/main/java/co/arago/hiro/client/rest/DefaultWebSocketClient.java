@@ -15,7 +15,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jdk.internal.joptsimple.internal.Strings;
 import net.minidev.json.JSONValue;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ws.WebSocket;
@@ -233,7 +232,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
           throw new IllegalArgumentException("unknown type " + type);
       }
       
-      if (!Strings.isNullOrEmpty(urlParameters))
+      if (urlParameters != null && !urlParameters.isEmpty())
       {
         sb.append("?");
         sb.append(urlParameters);

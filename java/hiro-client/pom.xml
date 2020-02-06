@@ -4,11 +4,11 @@
   <groupId>co.arago</groupId>
   <artifactId>hiro-client</artifactId>
   <name>${project.artifactId}</name>
-  <version>1.6.7</version>
+  <version>1.6.8</version>
   <parent>
     <groupId>co.arago</groupId>
     <artifactId>hiro-client-all</artifactId>
-    <version>1.6.7</version>
+    <version>1.6.8</version>
   </parent>
 
   <properties>
