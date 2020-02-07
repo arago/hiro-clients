@@ -147,22 +147,15 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
   }
 
+  
   @Override
-  public synchronized int sendMessage(String type, Map<String, String> headers, Map body) {
+  public void sendMessage(String message) {
     if (webSocketClient == null || !webSocketClient.isOpen()) {
       connect(false);
     }
 
-    ++idCounter;
-
-    final Map request = HiroCollections.newMap();
-    request.put("id", idCounter);
-    request.put("type", type);
-    request.put("headers", headers);
-    request.put("body", body);
-
     try {
-      webSocketClient.sendTextFrame(Helper.composeJson(request)).get(timeout, TimeUnit.MILLISECONDS);
+      webSocketClient.sendTextFrame(message).get(timeout, TimeUnit.MILLISECONDS);
       retries = 0;
     } catch (Throwable ex) {
       if (retries < MAX_RETRIES) {
@@ -171,14 +164,27 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         ++retries;
         connect(true);
 
-        return sendMessage(type, headers, body);
+        sendMessage(message);
       } else {
         close();
 
-        return Throwables.unchecked(ex);
+        Throwables.unchecked(ex);
       }
     }
+  }
+  
+  @Override
+  public synchronized int sendMessage(String type, Map<String, String> headers, Map body) {
+    ++idCounter;
 
+    final Map request = HiroCollections.newMap();
+    request.put("id", idCounter);
+    request.put("type", type);
+    request.put("headers", headers);
+    request.put("body", body);
+    
+    sendMessage(Helper.composeJson(request));
+    
     return idCounter;
   }
 
