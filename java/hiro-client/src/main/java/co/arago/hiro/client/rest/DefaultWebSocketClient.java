@@ -234,6 +234,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         
         case Graph:
           sb.append("/_g");
+        break;
+        
         default:
           throw new IllegalArgumentException("unknown type " + type);
       }
