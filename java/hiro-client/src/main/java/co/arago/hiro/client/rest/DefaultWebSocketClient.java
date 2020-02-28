@@ -14,6 +14,7 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minidev.json.JSONValue;
@@ -31,7 +32,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private volatile WebSocket webSocketClient;
   private volatile boolean running = true;
   private int retries = 0;
-  private int idCounter = 0;
+  private final AtomicLong idCounter = new AtomicLong();
   private final String restApiUrl;
   private final Listener<String> loglistener;
   private final Listener<String> dataListener;
@@ -76,72 +77,98 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         Throwables.unchecked(ex);
       }
     }
+    
+    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+      LOG.log(HiroClient.DEBUG_REST_LEVEL, "connecting " + this);
+    }
 
     WebSocketUpgradeHandler.Builder upgradeHandlerBuilder
             = new WebSocketUpgradeHandler.Builder();
 
     WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
-            .addWebSocketListener(new WebSocketListener() {
-              @Override
-              public void onOpen(WebSocket websocket) {
-                final Map m = HiroCollections.newMap();
-                m.put("type", "open");
-                m.put("open", websocket.isOpen());
+      .addWebSocketListener(new WebSocketListener() {
+        @Override
+        public void onOpen(WebSocket websocket) {
+          final Map m = HiroCollections.newMap();
+          m.put("type", "open");
+          m.put("open", websocket.isOpen());
 
-                process(loglistener, JSONValue.toJSONString(m));
-              }
+          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+            LOG.log(HiroClient.DEBUG_REST_LEVEL, "connected " + this);
+          }
 
-              @Override
-              public void onClose(WebSocket websocket, int code, String reason) {
-                if (running) {
-                  connect(false);
-                } else {
-                  final Map m = HiroCollections.newMap();
-                  m.put("type", "close");
-                  m.put("code", code);
-                  m.put("reason", reason);
+          process(loglistener, JSONValue.toJSONString(m));
+        }
 
-                  process(loglistener, JSONValue.toJSONString(m));
-                }
-              }
+        @Override
+        public void onClose(WebSocket websocket, int code, String reason) {
+          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+            LOG.log(HiroClient.DEBUG_REST_LEVEL, "received close " + this);
+          }
 
-              @Override
-              public void onError(Throwable t) {
-                if (running) {
-                  connect(false);
-                } else {
-                  final Map m = HiroCollections.newMap();
-                  m.put("type", "error");
-                  m.put("message", t.getMessage());
+          if (running) {
+            connect(false);
+          } else {
+            final Map m = HiroCollections.newMap();
+            m.put("type", "close");
+            m.put("code", code);
+            m.put("reason", reason);
 
-                  process(loglistener, JSONValue.toJSONString(m));
-                }
-              }
+            process(loglistener, JSONValue.toJSONString(m));
+          }
+        }
 
-              @Override
-              public void onTextFrame(String payload, boolean finalFragment, int rsv) {
-                if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-                  LOG.log(HiroClient.DEBUG_REST_LEVEL, "Response from WS-API: " + payload);
-                }
+        @Override
+        public void onError(Throwable t) {
+          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+            LOG.log(HiroClient.DEBUG_REST_LEVEL, "received error " + this, t);
+          }
 
-                process(dataListener, payload);
-              }
+          if (running) {
+            connect(false);
+          } else {
+            final Map m = HiroCollections.newMap();
+            m.put("type", "error");
+            m.put("message", t.getMessage());
 
-              @Override
-              public void onPingFrame(byte[] payload) {
-                if (webSocketClient != null && webSocketClient.isOpen()) webSocketClient.sendPongFrame(payload);
-              }
-            }).build();
+            process(loglistener, JSONValue.toJSONString(m));
+          }
+        }
+
+        @Override
+        public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+            LOG.log(HiroClient.DEBUG_REST_LEVEL, "received message " + payload);
+          }
+
+          process(dataListener, payload);
+        }
+
+        @Override
+        public void onPingFrame(byte[] payload) {
+          if (webSocketClient != null && webSocketClient.isOpen()) webSocketClient.sendPongFrame(payload);
+        }
+      }).build();
+    
     try {
       webSocketClient = client
-              .prepareGet(composeWsUrl(restApiUrl))
-              .addHeader("Sec-WebSocket-Protocol", getProtocol() + ", token-" + tokenProvider.getToken())
-              .setRequestTimeout(timeout)
-              .execute(wsHandler)
+        .prepareGet(composeWsUrl(restApiUrl))
+        .addHeader("Sec-WebSocket-Protocol", getProtocol() + ", token-" + tokenProvider.getToken())
+        .setRequestTimeout(timeout)
+        .execute(wsHandler)
         .get(timeout, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
       close();
-      throw new HiroException("websocket connection failed " + this + " " + ex.getMessage(), 400, ex);
+      
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+        LOG.log(HiroClient.DEBUG_REST_LEVEL, "connection failed " + this, ex);
+      }
+      
+      throw new HiroException("connection failed " + this + " " + ex.getMessage(), 400, ex);
+    }
+    
+    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+      LOG.log(HiroClient.DEBUG_REST_LEVEL, "connection opened " + this);
     }
   }
 
@@ -160,7 +187,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-      LOG.log(HiroClient.DEBUG_REST_LEVEL, "Request to WS-API: " + message);
+      LOG.log(HiroClient.DEBUG_REST_LEVEL, "send message " + message);
     }
 
     try {
@@ -183,18 +210,18 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   }
 
   @Override
-  public synchronized int sendMessage(String type, Map<String, String> headers, Map body) {
-    ++idCounter;
+  public synchronized long sendMessage(String type, Map<String, String> headers, Map body) {
+    final long id = idCounter.incrementAndGet();
 
     final Map request = HiroCollections.newMap();
-    request.put("id", idCounter);
+    request.put("id", id);
     request.put("type", type);
     request.put("headers", headers);
     request.put("body", body);
     
     sendMessage(Helper.composeJson(request));
     
-    return idCounter;
+    return id;
   }
 
   @Override
@@ -207,6 +234,10 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private void close0()
   {
     if (webSocketClient != null && webSocketClient.isOpen()) {
+      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+        LOG.log(HiroClient.DEBUG_REST_LEVEL, "closing " + this);
+      }
+      
       try {
         webSocketClient.sendCloseFrame(200, "OK").get(timeout, TimeUnit.MILLISECONDS);
       } catch (Throwable ignored) {
@@ -269,7 +300,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
   @Override
   public String toString() {
-    return "DefaultWebSocketClient{" + "running=" + running + ", retries=" + retries + ", idCounter=" + idCounter + ", restApiUrl=" + restApiUrl + ", loglistener=" + loglistener + ", dataListener=" + dataListener + ", tokenProvider=" + tokenProvider + ", timeout=" + timeout + ", type=" + type + '}';
+    return "DefaultWebSocketClient{" + "running=" + running + ", retries=" + retries + ", restApiUrl=" + restApiUrl + ", timeout=" + timeout + ", type=" + type + '}';
   }
   
   private String getProtocol() {
