@@ -19,5 +19,6 @@ public interface WebSocketClient {
    */
   void sendMessage(String message);
 
+  void ping();
   void close();
 }
