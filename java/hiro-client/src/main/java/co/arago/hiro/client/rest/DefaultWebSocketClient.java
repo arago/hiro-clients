@@ -13,6 +13,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,11 +25,14 @@ import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 public final class DefaultWebSocketClient implements WebSocketClient {
-
+  private static final long PING_TIMEOUT = 30 * 1000;
   private static final int MAX_RETRIES = 5;
   public static final String DEFAULT_API_VERSION = "6.1";
   public static final String API_PREFIX = "api";
   private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
+  
+    
+  private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
   private volatile WebSocket webSocketClient;
   private volatile boolean running = true;
   private int retries = 0;
@@ -58,6 +63,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     this.urlParameters = urlParameters;
 
     connect(false);
+    
+    executor.scheduleWithFixedDelay(() -> ping(), PING_TIMEOUT, PING_TIMEOUT, TimeUnit.MILLISECONDS);
   }
 
   private void connect(boolean waitForIt) {
@@ -215,6 +222,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     webSocketClient = null;
+    
+    executor.shutdownNow();
   }
 
   private String composeWsUrl(String inUrl) {
@@ -283,6 +292,21 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
       default:
         throw new IllegalArgumentException("unknown type " + type);
+    }
+  }
+  
+  private void ping()
+  {
+    if (webSocketClient != null && webSocketClient.isOpen()) {
+      try {
+        webSocketClient.sendCloseFrame(200, "OK").get(timeout, TimeUnit.MILLISECONDS);
+      } catch (Throwable t) {
+        final Map m = HiroCollections.newMap();
+        m.put("type", "error");
+        m.put("message", "ping failed " + t.getMessage());
+
+        process(loglistener, JSONValue.toJSONString(m));
+      }
     }
   }
 }
