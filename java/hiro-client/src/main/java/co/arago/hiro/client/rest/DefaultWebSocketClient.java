@@ -22,7 +22,6 @@ import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 public final class DefaultWebSocketClient implements WebSocketClient {
-
   private static final int MAX_RETRIES = 5;
   private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
   private volatile WebSocket webSocketClient;
@@ -267,6 +266,17 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
       default:
         throw new IllegalArgumentException("unknown type " + type);
+    }
+  }
+
+  @Override
+  public void ping() {
+    if (webSocketClient != null && webSocketClient.isOpen()) {
+      try {
+        webSocketClient.sendPingFrame().get(timeout, TimeUnit.MILLISECONDS);
+      } catch (Throwable ex) {
+        Throwables.unchecked(ex);
+      }
     }
   }
 }
