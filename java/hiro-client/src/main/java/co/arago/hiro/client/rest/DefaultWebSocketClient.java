@@ -122,10 +122,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
               @Override
               public void onPingFrame(byte[] payload) {
-                webSocketClient.sendPongFrame(payload);
+                if (webSocketClient != null && webSocketClient.isOpen()) webSocketClient.sendPongFrame(payload);
               }
             }).build();
-
     try {
       webSocketClient = client
               .prepareGet(composeWsUrl(restApiUrl))
