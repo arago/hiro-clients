@@ -5,7 +5,7 @@
   <artifactId>hiro-client-all</artifactId>
   <name>${project.artifactId}</name>
   <packaging>pom</packaging>
-  <version>1.6.10</version>
+  <version>1.6.11</version>
   <parent>
     <groupId>de.arago</groupId>
     <artifactId>parent</artifactId>
@@ -14,7 +14,7 @@
 
   <properties>
     <!-- override parent -->
-    <hiro-client-version>1.6.10</hiro-client-version>
+    <hiro-client-version>1.6.11</hiro-client-version>
     <hiro-client-util-version>1.6.0</hiro-client-util-version>
     <hiro-admin-client-version>1.6.0</hiro-admin-client-version>
     <!-- groovy stuff below -->
