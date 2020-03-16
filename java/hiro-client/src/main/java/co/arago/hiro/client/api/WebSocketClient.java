@@ -11,7 +11,7 @@ public interface WebSocketClient {
    * @param body
    * @return the id of this request
    */
-  int sendMessage(String type, Map<String, String> headers, Map body);
+  long sendMessage(String type, Map<String, String> headers, Map body);
   
   void sendMessage(String message);
 
