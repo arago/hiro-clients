@@ -44,7 +44,7 @@ public interface HiroActionClient extends Closeable {
 
   Map deleteApplicability(String id);
 
-  List<Map> listCapabilities();
+  Map listCapabilities();
 
   List<Map> getAppCapabilities(String appConfigId);
 
