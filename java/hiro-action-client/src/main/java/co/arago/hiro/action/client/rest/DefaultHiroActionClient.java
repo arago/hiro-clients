@@ -6,7 +6,6 @@ import co.arago.hiro.client.rest.AuthenticatedRestClient;
 import co.arago.hiro.client.util.Helper;
 import co.arago.hiro.client.util.HiroCollections;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 
-import static co.arago.hiro.client.api.RestClient.*;
 import static co.arago.hiro.client.util.Helper.*;
 
 public class DefaultHiroActionClient implements HiroActionClient {
@@ -42,87 +40,6 @@ public class DefaultHiroActionClient implements HiroActionClient {
   }
 
   @Override
-  public Map createActionHandler(Map attributes) {
-    final List paths = HiroCollections.newList();
-    paths.add(notNull(URL_PATH_ACTIONHANDLER, "path"));
-    final Map params = HiroCollections.newMap();
-    if (attributes.containsKey(HEADER_IMPORT)) {
-      params.put(HEADER_IMPORT, attributes.remove(HEADER_IMPORT));
-    }
-    final String result = restClient.post(paths, Helper.composeJson(attributes), params);
-    return Helper.parseJsonBody(result);
-  }
-
-  @Override
-  public Map getActionHandler(String id) {
-    return getFromPath(id, URL_PATH_ACTIONHANDLER);
-  }
-
-  @Override
-  public Map updateActionHandler(String id, Map attributes) {
-    return updateFromPath(id, attributes, URL_PATH_ACTIONHANDLER);
-  }
-
-  @Override
-  public Map deleteActionHandler(String id) {
-    return deleteFromPath(id, URL_PATH_ACTIONHANDLER);
-  }
-
-  @Override
-  public Map createCapability(Map attributes) {
-    final List paths = HiroCollections.newList();
-    paths.add(notNull(URL_PATH_ACTIONCAPABILITY, "path"));
-    final Map params = HiroCollections.newMap();
-    if (attributes.containsKey(HEADER_IMPORT)) {
-      params.put(HEADER_IMPORT, attributes.remove(HEADER_IMPORT));
-    }
-    final String result = restClient.post(paths, Helper.composeJson(attributes), params);
-    return Helper.parseJsonBody(result);
-  }
-
-  @Override
-  public Map getCapability(String id) {
-    return getFromPath(id, URL_PATH_ACTIONCAPABILITY);
-  }
-
-  @Override
-  public Map updateCapability(String id, Map attributes) {
-    return updateFromPath(id, attributes, URL_PATH_ACTIONCAPABILITY);
-  }
-
-  @Override
-  public Map deleteCapability(String id) {
-    return deleteFromPath(id, URL_PATH_ACTIONCAPABILITY);
-  }
-
-  @Override
-  public Map createApplicability(Map attributes) {
-    final List paths = HiroCollections.newList();
-    paths.add(notNull(URL_PATH_ACTIONAPPLICABILITY, "path"));
-    final Map params = HiroCollections.newMap();
-    if (attributes.containsKey(HEADER_IMPORT)) {
-      params.put(HEADER_IMPORT, attributes.remove(HEADER_IMPORT));
-    }
-    final String result = restClient.post(paths, Helper.composeJson(attributes), params);
-    return Helper.parseJsonBody(result);
-  }
-
-  @Override
-  public Map getApplicability(String id) {
-    return getFromPath(id, URL_PATH_ACTIONAPPLICABILITY);
-  }
-
-  @Override
-  public Map updateApplicability(String id, Map attributes) {
-    return updateFromPath(id, attributes, URL_PATH_ACTIONAPPLICABILITY);
-  }
-
-  @Override
-  public Map deleteApplicability(String id) {
-    return deleteFromPath(id, URL_PATH_ACTIONAPPLICABILITY);
-  }
-
-  @Override
   public Map listCapabilities() {
     final List paths = HiroCollections.newList();
     paths.add(URL_PATH_ACTIONCAPABILITIES);
@@ -131,69 +48,11 @@ public class DefaultHiroActionClient implements HiroActionClient {
   }
 
   @Override
-  public List<Map> getAppCapabilities(String appConfigId) {
+  public Map getAppApplicabilities() {
     final List paths = HiroCollections.newList();
-    paths.add(URL_PATH_APP);
-    paths.add(notNull(appConfigId, "appConfigid"));
-    paths.add(URL_PATH_ACTIONCAPABILITIES);
-    final String result = restClient.get(paths, Collections.EMPTY_MAP);
-    return Helper.unwrapJsonArray(result);
-  }
-
-  @Override
-  public List<Map> getAppApplicabilities(String appConfigId) {
-    final List paths = HiroCollections.newList();
-    paths.add(URL_PATH_APP);
-    paths.add(notNull(appConfigId, "appConfigid"));
     paths.add(URL_PATH_ACTIONAPPLICABILITIES);
     final String result = restClient.get(paths, Collections.EMPTY_MAP);
-    return Helper.unwrapJsonArray(result);
-  }
-
-  @Override
-  public List<Map> getAppActionHandlers(String appConfigId) {
-    final List paths = HiroCollections.newList();
-    paths.add(URL_PATH_APP);
-    paths.add(notNull(appConfigId, "appConfigid"));
-    paths.add(URL_PATH_ACTIONHANDLERS);
-    final String result = restClient.get(paths, HiroCollections.newMap());
-    return Helper.unwrapJsonArray(result);
-  }
-
-  @Override
-  public List<Map> setAppActionHandlers(String appConfigId, Collection<String> actionHandlers) {
-    final List paths = HiroCollections.newList();
-    paths.add(notNull(URL_PATH_APP, "path"));
-    paths.add(notNull(appConfigId, "appConfigid"));
-    paths.add(URL_PATH_ACTIONHANDLERS);
-    final Map attributes = HiroCollections.newMap();
-    attributes.put("actionHandlers", actionHandlers);
-    final String result = restClient.post(paths, Helper.composeJson(attributes), HiroCollections.newMap());
-    return Helper.parseItemListOfMaps(result);
-  }
-
-  @Override
-  public List<Map> setActionHandlerApplicabilities(String actionHandlerId, Collection<String> applicabilities) {
-    final List paths = HiroCollections.newList();
-    paths.add(notNull(URL_PATH_ACTIONHANDLER, "path"));
-    paths.add(notNull(actionHandlerId, "actionHandlerId"));
-    paths.add(URL_PATH_ACTIONAPPLICABILITIES);
-    final Map attributes = HiroCollections.newMap();
-    attributes.put("applicabilities", applicabilities);
-    final String result = restClient.post(paths, Helper.composeJson(attributes), HiroCollections.newMap());
-    return Helper.parseItemListOfMaps(result);
-  }
-
-  @Override
-  public List<Map> setApplicabilityCapabilities(String applicability, Collection<String> capabilities) {
-    final List paths = HiroCollections.newList();
-    paths.add(notNull(URL_PATH_ACTIONAPPLICABILITY, "path"));
-    paths.add(notNull(applicability, "applicabilityId"));
-    paths.add(URL_PATH_ACTIONCAPABILITIES);
-    final Map attributes = HiroCollections.newMap();
-    attributes.put("capabilities", capabilities);
-    final String result = restClient.post(paths, Helper.composeJson(attributes), HiroCollections.newMap());
-    return Helper.parseItemListOfMaps(result);
+    return Helper.unwrapJsonMap(result);
   }
 
   private Map updateFromPath(String id, Map attributes, String path) {
