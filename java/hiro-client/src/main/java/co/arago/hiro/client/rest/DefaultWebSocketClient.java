@@ -252,7 +252,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
   @Override
   public String toString() {
-    return "DefaultWebSocketClient{" + "running=" + running + ", retries=" + retries + ", idCounter=" + idCounter + ", restApiUrl=" + restApiUrl + ", loglistener=" + loglistener + ", dataListener=" + dataListener + ", tokenProvider=" + tokenProvider + ", timeout=" + timeout + ", type=" + type + '}';
+    return "DefaultWebSocketClient{" + "running=" + running + ", retries=" + retries + ", idCounter=" + idCounter + ", restApiUrl=" + restApiUrl + ", loglistener=" + loglistener + ", dataListener=" + dataListener + ", tokenProvider=" + tokenProvider.getClass() + ", timeout=" + timeout + ", type=" + type + '}';
   }
 
   private String getProtocol() {
