@@ -123,11 +123,11 @@ public class DefaultHiroActionClient implements HiroActionClient {
   }
 
   @Override
-  public List<Map> listCapabilities() {
+  public Map listCapabilities() {
     final List paths = HiroCollections.newList();
     paths.add(URL_PATH_ACTIONCAPABILITIES);
     final String result = restClient.get(paths, HiroCollections.newMap());
-    return Helper.unwrapJsonArray(result);
+    return Helper.unwrapJsonMap(result);
   }
 
   @Override
