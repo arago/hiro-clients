@@ -2,11 +2,13 @@ package co.arago.hiro.client.rest;
 
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.LogValue;
+import static co.arago.hiro.client.api.RestClient.*;
 import co.arago.hiro.client.api.TimeseriesValue;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.util.DefaultLogValue;
 import co.arago.hiro.client.util.DefaultTimeseriesValue;
 import co.arago.hiro.client.util.Helper;
+import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.SimpleWsListener;
@@ -27,9 +29,6 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.eclipse.jetty.websocket.client.io.UpgradeListener;
-
-import static co.arago.hiro.client.util.Helper.*;
-import static co.arago.hiro.client.api.RestClient.*;
 
 public class DefaultHiroClient implements HiroClient {
   
@@ -317,7 +316,7 @@ public class DefaultHiroClient implements HiroClient {
         + StringUtils.join(HiroCollections.newList(API_PREFIX, EVENT_STREAM_SUFFIX, EVENT_STREAM_VERSION), "/")
         + prepareEventStreamParams(requestParameters));
       final ClientUpgradeRequest clientUpgradeRequest = new ClientUpgradeRequest();
-      if (LOG.isLoggable(DEBUG_REST_LEVEL)) {
+      if (LOG.isLoggable(Level.FINEST)) {
         StringBuilder sb = new StringBuilder();
         sb.append("WS-CONNECT [\n  Uri=");
         sb.append(uri.toString());
@@ -328,13 +327,13 @@ public class DefaultHiroClient implements HiroClient {
           sb.append(el.getValue());
         }
         sb.append("\n]");
-        LOG.log(DEBUG_REST_LEVEL, sb.toString());
+        LOG.log(Level.FINEST, sb.toString());
       }
       clientUpgradeRequest.setRequestURI(uri);
       clientUpgradeRequest.setSubProtocols(getSubProtocols());
       UpgradeListener upgrListener = new WsUpgradeLogger(debugLevel);
       try (Session session = webSocketClient.connect(new SimpleWsListener(requestParameters.get("filter"), dataListener, logListener), uri, clientUpgradeRequest, upgrListener).get()) {
-        if (LOG.isLoggable(DEBUG_REST_LEVEL)) {
+        if (LOG.isLoggable(Level.FINEST)) {
           StringBuilder sb = new StringBuilder();
           sb.append("WS-CONNECT [\n  Remote=");
           sb.append(session.getRemoteAddress().getHostName());
@@ -343,7 +342,7 @@ public class DefaultHiroClient implements HiroClient {
           sb.append("\n  IdleTimeout=");
           sb.append(session.getIdleTimeout());
           sb.append("\n]");
-          LOG.log(DEBUG_REST_LEVEL, sb.toString());
+          LOG.log(Level.FINEST, sb.toString());
         }
         Thread.sleep(listeningTime);
       }

@@ -85,8 +85,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
       }
     }
     
-    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-      LOG.log(HiroClient.DEBUG_REST_LEVEL, "connecting " + this);
+    if (LOG.isLoggable(Level.FINEST)) {
+      LOG.log(Level.FINEST, "connecting " + this);
     }
 
     WebSocketUpgradeHandler.Builder upgradeHandlerBuilder
@@ -100,8 +100,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
           m.put("type", "open");
           m.put("open", websocket.isOpen());
 
-          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-            LOG.log(HiroClient.DEBUG_REST_LEVEL, "connected " + this);
+          if (LOG.isLoggable(Level.FINEST)) {
+            LOG.log(Level.FINEST, "connected " + this);
           }
 
           process(loglistener, JSONValue.toJSONString(m));
@@ -109,8 +109,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         @Override
         public void onClose(WebSocket websocket, int code, String reason) {
-          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-            LOG.log(HiroClient.DEBUG_REST_LEVEL, "received close " + this);
+          if (LOG.isLoggable(Level.FINEST)) {
+            LOG.log(Level.FINEST, "received close " + this);
           }
 
           if (running) {
@@ -127,8 +127,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         @Override
         public void onError(Throwable t) {
-          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-            LOG.log(HiroClient.DEBUG_REST_LEVEL, "received error " + this, t);
+          if (LOG.isLoggable(Level.FINEST)) {
+            LOG.log(Level.FINEST, "received error " + this, t);
           }
 
           if (running) {
@@ -144,8 +144,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         @Override
         public void onTextFrame(String payload, boolean finalFragment, int rsv) {
-          if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-            LOG.log(HiroClient.DEBUG_REST_LEVEL, "received message " + payload);
+          if (LOG.isLoggable(Level.FINEST)) {
+            LOG.log(Level.FINEST, "received message " + payload);
           }
 
           process(dataListener, payload);
@@ -167,15 +167,15 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     } catch (Throwable ex) {
       close();
       
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        LOG.log(HiroClient.DEBUG_REST_LEVEL, "connection failed " + this, ex);
+      if (LOG.isLoggable(Level.FINEST)) {
+        LOG.log(Level.FINEST, "connection failed " + this, ex);
       }
       
       throw new HiroException("connection failed " + this + " " + ex.getMessage(), 400, ex);
     }
     
-    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-      LOG.log(HiroClient.DEBUG_REST_LEVEL, "connection opened " + this);
+    if (LOG.isLoggable(Level.FINEST)) {
+      LOG.log(Level.FINEST, "connection opened " + this);
     }
   }
 
@@ -193,8 +193,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
       connect(false);
     }
 
-    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-      LOG.log(HiroClient.DEBUG_REST_LEVEL, "send message " + message);
+    if (LOG.isLoggable(Level.FINEST)) {
+      LOG.log(Level.FINEST, "send message " + message);
     }
 
     try {
@@ -241,8 +241,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private void close0()
   {
     if (webSocketClient != null && webSocketClient.isOpen()) {
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        LOG.log(HiroClient.DEBUG_REST_LEVEL, "closing " + this);
+      if (LOG.isLoggable(Level.FINEST)) {
+        LOG.log(Level.FINEST, "closing " + this);
       }
       
       try {

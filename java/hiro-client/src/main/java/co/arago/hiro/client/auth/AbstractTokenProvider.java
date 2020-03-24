@@ -3,6 +3,7 @@ package co.arago.hiro.client.auth;
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
+import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
@@ -19,8 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
-
-import static co.arago.hiro.client.util.Helper.*;
 
 /**
  *
@@ -79,8 +78,8 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     final BoundRequestBuilder builder = newRequest(data, apiUrl + "/app");
 
     try {
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
+      if (LOG.isLoggable(Level.FINEST)) {
+        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
       }
 
       final Response response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
@@ -127,8 +126,8 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
     Response response;
     try {
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
+      if (LOG.isLoggable(Level.FINEST)) {
+        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
       }
 
       response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
@@ -174,8 +173,8 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
   }
 
   private Response checkResponse(final Response response) {
-    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-      HttpClientHelper.debugResponse(response, LOG, HiroClient.DEBUG_REST_LEVEL);
+    if (LOG.isLoggable(Level.FINEST)) {
+      HttpClientHelper.debugResponse(response, LOG, Level.FINEST);
     }
 
     if (response.getStatusCode() != 200) {
