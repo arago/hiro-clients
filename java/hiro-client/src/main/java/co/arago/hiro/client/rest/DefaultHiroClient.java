@@ -11,24 +11,16 @@ import co.arago.hiro.client.util.Helper;
 import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.Listener;
-import co.arago.hiro.client.util.SimpleWsListener;
-import co.arago.hiro.client.util.WsUpgradeLogger;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minidev.json.JSONValue;
 import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
-import org.eclipse.jetty.websocket.client.io.UpgradeListener;
 
 public class DefaultHiroClient implements HiroClient {
   
@@ -49,8 +41,6 @@ public class DefaultHiroClient implements HiroClient {
   private final AuthenticatedRestClient authClient;
   private final TokenProvider tokenProvider;
   private final String restApiUrl;
-  // only for getEventStream:
-  private final boolean trustAllCerts;
   private final Level debugLevel;
   
   public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel) {
@@ -82,8 +72,6 @@ public class DefaultHiroClient implements HiroClient {
     this.authClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION), "/"));
     this.tokenProvider = tokenProvider;
     this.restApiUrl = restApiUrl;
-    // used for event stream:
-    this.trustAllCerts = trustAllCerts;
     this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
     LOG.setLevel(this.debugLevel);
   }
@@ -305,83 +293,12 @@ public class DefaultHiroClient implements HiroClient {
     }
   }
   
-  @Override
-  public void getEventStream(Map<String, String> requestParameters, Listener<String> dataListener, Listener<String> logListener) {
-    Long listeningTime = Long.parseLong(notEmpty(requestParameters.get("timeout"), "timeout"));
-    final WebSocketClient webSocketClient = new WebSocketClient();
-    webSocketClient.getHttpClient().getSslContextFactory().setTrustAll(trustAllCerts);
-    try {
-      webSocketClient.start();
-      URI uri = new URI(this.restApiUrl.replace("http", "ws") + "/"
-        + StringUtils.join(HiroCollections.newList(API_PREFIX, EVENT_STREAM_SUFFIX, EVENT_STREAM_VERSION), "/")
-        + prepareEventStreamParams(requestParameters));
-      final ClientUpgradeRequest clientUpgradeRequest = new ClientUpgradeRequest();
-      if (LOG.isLoggable(Level.FINEST)) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("WS-CONNECT [\n  Uri=");
-        sb.append(uri.toString());
-        for (Entry<String, String> el : requestParameters.entrySet()) {
-          sb.append("\n  ");
-          sb.append(el.getKey());
-          sb.append("=");
-          sb.append(el.getValue());
-        }
-        sb.append("\n]");
-        LOG.log(Level.FINEST, sb.toString());
-      }
-      clientUpgradeRequest.setRequestURI(uri);
-      clientUpgradeRequest.setSubProtocols(getSubProtocols());
-      UpgradeListener upgrListener = new WsUpgradeLogger(debugLevel);
-      try (Session session = webSocketClient.connect(new SimpleWsListener(requestParameters.get("filter"), dataListener, logListener), uri, clientUpgradeRequest, upgrListener).get()) {
-        if (LOG.isLoggable(Level.FINEST)) {
-          StringBuilder sb = new StringBuilder();
-          sb.append("WS-CONNECT [\n  Remote=");
-          sb.append(session.getRemoteAddress().getHostName());
-          sb.append("\n  Protocol=");
-          sb.append(session.getProtocolVersion());
-          sb.append("\n  IdleTimeout=");
-          sb.append(session.getIdleTimeout());
-          sb.append("\n]");
-          LOG.log(Level.FINEST, sb.toString());
-        }
-        Thread.sleep(listeningTime);
-      }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        webSocketClient.stop();
-      } catch (Exception ex) {
-        //ignored
-      }
-      dataListener.onFinish();
-      logListener.onFinish();
-    }
-  }
   
   protected List getSubProtocols() {
     final List protocols = new ArrayList();
     protocols.add("events-1.0.0");
     protocols.add("token-" + tokenProvider.getToken());
     return protocols;
-  }
-  
-  private String prepareEventStreamParams(Map<String, String> params) {
-    String ret = "?";
-    if (params.containsKey("groupId")) {
-      ret += "&groupId=" + params.get("groupId");
-    }
-    if (params.containsKey("consumerId")) {
-      ret += "&consumerId=" + params.get("consumerId");
-    }
-    if (params.containsKey("offset")) {
-      ret += "&offset=" + params.get("offsets");
-    }
-    if (params.containsKey("delta")) {
-      ret += "&delta=" + params.get("delta");
-    }
-    ret = ret.replace("?&", "?");
-    return ret;
   }
   
   @Override

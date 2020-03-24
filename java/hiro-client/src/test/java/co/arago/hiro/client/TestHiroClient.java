@@ -24,12 +24,11 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  *
@@ -178,27 +177,6 @@ public class TestHiroClient {
 
     assertEquals("cj67kc74g07ihdr74p0c3sn6i", entries.get(0).get("id"));
     assertEquals("cj67kc74g07ihdr74p0c3sn6i", ((Map) entries.get(0).get("body")).get("ogit/_id"));
-  }
-
-  @Ignore
-  @Test
-  public void testWsEvents() throws Exception {
-    Map params = HiroCollections.newMap();
-    params.put("timeout", "60000");
-    params.put("filter", "(element.ogit/_type = *)");
-    client.getEventStream(params, new Listener<String>() {
-      @Override
-      public Listener.ListenerState process(String entry) {
-        System.out.println("data: " + entry);
-        return Listener.ListenerState.OK;
-      }
-    }, new Listener<String>() {
-      @Override
-      public Listener.ListenerState process(String entry) {
-        System.out.println("log: " + entry);
-        return Listener.ListenerState.OK;
-      }
-    });
   }
 
   @Ignore
