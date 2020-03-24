@@ -140,9 +140,6 @@ public interface HiroClient extends Closeable {
   // special calls
   Map apiVersion();
 
-  // get ws event stream
-  void getEventStream(Map<String, String> requestParameters, Listener<String> msgListener, Listener<String> metaListener);
-
 //Logs
   void updateLogValues(String logNodeId, List<LogValue> values);
 
