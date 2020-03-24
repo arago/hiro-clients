@@ -1,7 +1,6 @@
 package co.arago.hiro.client.util;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,7 +29,7 @@ public class WsUpgradeLogger implements UpgradeListener {
 
   @Override
   public void onHandshakeRequest(UpgradeRequest req) {
-    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+    if (LOG.isLoggable(Level.FINEST)) {
       StringBuilder sb = new StringBuilder();
       sb.append("REQUEST [\n  Url=");
       sb.append(req.getRequestURI());
@@ -59,13 +58,13 @@ public class WsUpgradeLogger implements UpgradeListener {
         sb.append("\n");
       }
       sb.append("]");
-      LOG.log(HiroClient.DEBUG_REST_LEVEL, sb.toString());
+      LOG.log(Level.FINEST, sb.toString());
     }
   }
 
   @Override
   public void onHandshakeResponse(UpgradeResponse resp) {
-    if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
+    if (LOG.isLoggable(Level.FINEST)) {
       StringBuilder sb = new StringBuilder();
       sb.append("RESPONSE [\n");
       sb.append("  Headers:\n");
@@ -84,7 +83,7 @@ public class WsUpgradeLogger implements UpgradeListener {
       sb.append(resp.getAcceptedSubProtocol());
       sb.append("\n");
       sb.append("]");
-      LOG.log(HiroClient.DEBUG_REST_LEVEL, sb.toString());
+      LOG.log(Level.FINEST, sb.toString());
     }
   }
 

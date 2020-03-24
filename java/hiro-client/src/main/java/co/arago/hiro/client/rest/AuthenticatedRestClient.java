@@ -2,8 +2,10 @@ package co.arago.hiro.client.rest;
 
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.RestClient;
+import static co.arago.hiro.client.api.RestClient.*;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.auth.FixedTokenProvider;
+import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
@@ -34,9 +36,6 @@ import org.jsfr.json.JsonSurferJackson;
 import org.jsfr.json.NonBlockingParser;
 import org.jsfr.json.ParsingContext;
 import org.jsfr.json.SurfingConfiguration;
-
-import static co.arago.hiro.client.api.RestClient.*;
-import static co.arago.hiro.client.util.Helper.*;
 
 public class AuthenticatedRestClient implements RestClient {
 
@@ -212,8 +211,8 @@ public class AuthenticatedRestClient implements RestClient {
     addToken(prepareGet);
 
     try {
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        HttpClientHelper.debugRequest(prepareGet.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
+      if (LOG.isLoggable(Level.FINEST)) {
+        HttpClientHelper.debugRequest(prepareGet.build(), LOG, Level.FINEST);
       }
       final Response r = prepareGet.execute().get(timeout, TimeUnit.MILLISECONDS);
       if (tokenProvider.checkTokenRenewal(r)) {
@@ -247,8 +246,8 @@ public class AuthenticatedRestClient implements RestClient {
       = client().prepareGet(composeUrl(path)).setFollowRedirect(false);
     Response response = runBasicRequest(prepareGet, null, params);
     if (REDIRECT_CODES.contains(response.getStatusCode())) {
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        LOG.log(HiroClient.DEBUG_REST_LEVEL, "Found redirect with code={0} location={1}",
+      if (LOG.isLoggable(Level.FINEST)) {
+        LOG.log(Level.FINEST, "Found redirect with code={0} location={1}",
           new Object[]{response.getStatusCode(), response.getHeader("Location")});
       }
       return (String) response.getHeader("Location");
@@ -308,8 +307,8 @@ public class AuthenticatedRestClient implements RestClient {
       addDefaultHeaders(builder, parameters);
       addParameters(builder, parameters);
 
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
+      if (LOG.isLoggable(Level.FINEST)) {
+        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
       }
 
       ListenableFuture<Response> execute = builder.execute(new AsyncHandler<Response>() {
@@ -375,14 +374,14 @@ public class AuthenticatedRestClient implements RestClient {
       addParameters(builder, parameters);
       addBody(builder, json);
 
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, HiroClient.DEBUG_REST_LEVEL);
+      if (LOG.isLoggable(Level.FINEST)) {
+        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
       }
 
       // having a timeout is good practice, even if it is one week
       Response response = builder.execute().get(timeout, TimeUnit.MILLISECONDS);
-      if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
-        HttpClientHelper.debugResponse(response, LOG, HiroClient.DEBUG_REST_LEVEL);
+      if (LOG.isLoggable(Level.FINEST)) {
+        HttpClientHelper.debugResponse(response, LOG, Level.FINEST);
       }
       return checkResponse(response);
     } catch (Throwable t) {
