@@ -9,6 +9,8 @@ import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.Throwables;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -137,6 +139,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             final Map m = HiroCollections.newMap();
             m.put("type", "error");
             m.put("message", t.getMessage());
+            m.put("stack", stacktrace(t));
 
             process(loglistener, JSONValue.toJSONString(m));
           }
@@ -171,7 +174,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         LOG.log(HiroClient.DEBUG_REST_LEVEL, "connection failed " + this, ex);
       }
       
-      throw new HiroException("connection failed " + this + " " + ex.getMessage(), 400, ex);
+      throw new HiroException("connection failed " + this + " " + ex.getMessage() + " " + stacktrace(ex), 400, ex);
     }
     
     if (LOG.isLoggable(HiroClient.DEBUG_REST_LEVEL)) {
@@ -335,9 +338,21 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         final Map m = HiroCollections.newMap();
         m.put("type", "error");
         m.put("message", "ping failed " + t.getMessage());
+        m.put("stack", stacktrace(t));
 
         process(loglistener, JSONValue.toJSONString(m));
       }
     }
+  }
+  
+  private String stacktrace(Throwable t) {
+    if (t == null) return "";
+    
+    final StringWriter sw = new StringWriter();
+    final PrintWriter pw = new PrintWriter(sw);
+    
+    t.printStackTrace(pw);
+    
+    return sw.toString();
   }
 }
