@@ -4,7 +4,7 @@
   <groupId>co.arago</groupId>
   <artifactId>hiro-client</artifactId>
   <name>${project.artifactId}</name>
-  <version>1.6.13</version>
+  <version>1.6.14</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -21,7 +21,7 @@
     <javaee-web-api-version>7.0</javaee-web-api-version>
     <log4j-version>1.2.16</log4j-version>
     <!-- override parent -->
-    <hiro-client-version>1.6.13</hiro-client-version>
+    <hiro-client-version>1.6.14</hiro-client-version>
     <!-- groovy stuff below -->
     <commons-cli-version>1.4</commons-cli-version>
     <groovy-version>2.4.13</groovy-version>

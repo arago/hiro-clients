@@ -8,6 +8,8 @@ import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.Throwables;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -109,6 +111,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                   final Map m = HiroCollections.newMap();
                   m.put("type", "error");
                   m.put("message", t.getMessage());
+                  m.put("stack", stacktrace(t));
 
                   process(loglistener, JSONValue.toJSONString(m));
                 }
@@ -278,5 +281,16 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         Throwables.unchecked(ex);
       }
     }
+  }
+  
+  private String stacktrace(Throwable t) {
+    if (t == null) return "";
+    
+    final StringWriter sw = new StringWriter();
+    final PrintWriter pw = new PrintWriter(sw);
+    
+    t.printStackTrace(pw);
+    
+    return sw.toString();
   }
 }
