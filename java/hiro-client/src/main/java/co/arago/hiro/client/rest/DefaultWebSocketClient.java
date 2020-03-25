@@ -1,6 +1,5 @@
 package co.arago.hiro.client.rest;
 
-import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.builder.ClientBuilder.WebsocketType;
@@ -79,7 +78,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
       try {
         Thread.sleep(1000);
       } catch (InterruptedException ex) {
-        close();
+        close0();
 
         Throwables.unchecked(ex);
       }
@@ -165,7 +164,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         .execute(wsHandler)
         .get(timeout, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
-      close();
+      close0();
       
       if (LOG.isLoggable(Level.FINEST)) {
         LOG.log(Level.FINEST, "connection failed " + this, ex);
@@ -209,7 +208,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         sendMessage(message);
       } else {
-        close();
+        close0();
 
         Throwables.unchecked(ex);
       }
@@ -236,6 +235,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     running = false;
 
     close0();
+    
+    executor.shutdownNow();
   }
   
   private void close0()
@@ -253,8 +254,6 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     webSocketClient = null;
-    
-    executor.shutdownNow();
   }
 
   private String composeWsUrl(String inUrl) {
