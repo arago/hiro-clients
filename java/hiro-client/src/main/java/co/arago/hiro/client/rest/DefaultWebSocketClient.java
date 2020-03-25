@@ -72,13 +72,13 @@ public final class DefaultWebSocketClient implements WebSocketClient {
       return;
     }
 
-    close0();
+    closeWs();
 
     if (waitForIt) {
       try {
         Thread.sleep(1000);
       } catch (InterruptedException ex) {
-        close0();
+        closeWs();
 
         Throwables.unchecked(ex);
       }
@@ -164,7 +164,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         .execute(wsHandler)
         .get(timeout, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
-      close0();
+      closeWs();
       
       if (LOG.isLoggable(Level.FINEST)) {
         LOG.log(Level.FINEST, "connection failed " + this, ex);
@@ -208,7 +208,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         sendMessage(message);
       } else {
-        close0();
+        closeWs();
 
         Throwables.unchecked(ex);
       }
@@ -234,12 +234,12 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   public synchronized void close() {
     running = false;
 
-    close0();
+    closeWs();
     
     executor.shutdownNow();
   }
   
-  private void close0()
+  private void closeWs()
   {
     if (webSocketClient != null && webSocketClient.isOpen()) {
       if (LOG.isLoggable(Level.FINEST)) {
