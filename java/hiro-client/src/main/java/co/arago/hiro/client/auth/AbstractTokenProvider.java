@@ -43,7 +43,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
   private final AsyncHttpClient client;
   private final String url;
-  private final String apiUrl;
+  protected final String apiUrl;
   protected final String clientSecret;
   protected final String clientId;
 
@@ -72,10 +72,14 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     }
   }
 
+  protected String fullApiUrl() {
+    return apiUrl + "/app";
+  }
+
   private synchronized void obtainToken() {
     final Map data = new HashMap();
     prepareTokenRequest(data);
-    final BoundRequestBuilder builder = newRequest(data, apiUrl + "/app");
+    final BoundRequestBuilder builder = newRequest(data, fullApiUrl());
 
     try {
       if (LOG.isLoggable(Level.FINEST)) {

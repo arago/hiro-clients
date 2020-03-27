@@ -1,6 +1,7 @@
 package co.arago.hiro.client.builder;
 
 import co.arago.hiro.client.api.TokenProvider;
+import co.arago.hiro.client.auth.DeviceTokenProvider;
 import co.arago.hiro.client.auth.FixedTokenProvider;
 import co.arago.hiro.client.auth.PasswordTokenProvider;
 import org.asynchttpclient.AsyncHttpClient;
@@ -50,4 +51,11 @@ public final class TokenBuilder {
   public TokenProvider makePassword(String url, String clientId, String clientSecret, String userName, String password) {
     return new PasswordTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel, notEmpty(clientId, "clientId"), notEmpty(clientSecret, "clientSecret"), notEmpty(userName, "userName"), notEmpty(password, "password"), notEmpty(apiVersion, "apiVErsion"));
   }
+  public TokenProvider makeDevice(String url, String appId, String appSecret, String deviceId, String deviceSecret) {
+    // NOTE: we do not pass apiVersion (device stuff has separate versioning)
+    return new DeviceTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel, notEmpty(appId,
+            "appId"), notEmpty(appSecret, "appSecret"), notEmpty(deviceId, "deviceId"),
+            notEmpty(deviceSecret, "deviceSecret"));
+  }
+
 }
