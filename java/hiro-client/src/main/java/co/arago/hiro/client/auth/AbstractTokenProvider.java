@@ -82,9 +82,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     final BoundRequestBuilder builder = newRequest(data, fullApiUrl());
 
     try {
-      if (LOG.isLoggable(Level.FINEST)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
-      }
+      HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
 
       final Response response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
 
@@ -130,9 +128,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
     Response response;
     try {
-      if (LOG.isLoggable(Level.FINEST)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
-      }
+      HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
 
       response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
       if (resetState) {
@@ -177,9 +173,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
   }
 
   private Response checkResponse(final Response response) {
-    if (LOG.isLoggable(Level.FINEST)) {
-      HttpClientHelper.debugResponse(response, LOG, Level.FINEST);
-    }
+    HttpClientHelper.debugResponse(response, LOG, Level.FINEST);
 
     if (response.getStatusCode() != 200) {
       if (response.getStatusCode() == 400 || response.getStatusCode() == 403) {
