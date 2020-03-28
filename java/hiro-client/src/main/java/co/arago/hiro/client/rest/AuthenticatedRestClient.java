@@ -211,9 +211,7 @@ public class AuthenticatedRestClient implements RestClient {
     addToken(prepareGet);
 
     try {
-      if (LOG.isLoggable(Level.FINEST)) {
-        HttpClientHelper.debugRequest(prepareGet.build(), LOG, Level.FINEST);
-      }
+      HttpClientHelper.debugRequest(prepareGet.build(), LOG, Level.FINEST);
       final Response r = prepareGet.execute().get(timeout, TimeUnit.MILLISECONDS);
       if (tokenProvider.checkTokenRenewal(r)) {
         tokenProvider.renewToken();
@@ -307,9 +305,7 @@ public class AuthenticatedRestClient implements RestClient {
       addDefaultHeaders(builder, parameters);
       addParameters(builder, parameters);
 
-      if (LOG.isLoggable(Level.FINEST)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
-      }
+      HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
 
       ListenableFuture<Response> execute = builder.execute(new AsyncHandler<Response>() {
         private final Response.ResponseBuilder builder = new Response.ResponseBuilder();
@@ -374,15 +370,11 @@ public class AuthenticatedRestClient implements RestClient {
       addParameters(builder, parameters);
       addBody(builder, json);
 
-      if (LOG.isLoggable(Level.FINEST)) {
-        HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
-      }
+      HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
 
       // having a timeout is good practice, even if it is one week
       Response response = builder.execute().get(timeout, TimeUnit.MILLISECONDS);
-      if (LOG.isLoggable(Level.FINEST)) {
-        HttpClientHelper.debugResponse(response, LOG, Level.FINEST);
-      }
+      HttpClientHelper.debugResponse(response, LOG, Level.FINEST);
       return checkResponse(response);
     } catch (Throwable t) {
       return Throwables.unchecked(t);

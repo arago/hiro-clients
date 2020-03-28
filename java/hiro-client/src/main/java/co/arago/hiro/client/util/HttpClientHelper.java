@@ -17,6 +17,7 @@ import org.asynchttpclient.Response;
 public final class HttpClientHelper
 {
   private static final String USERAGENT = "co.arago.hiro.client/" + VersionHelper.version();
+  public static Level HTTP_DEBUG_LEVEL = Level.FINEST;
 
   private static AsyncHttpClient _newClient(boolean trustAllCerts, int timeout) {
     final DefaultAsyncHttpClientConfig.Builder builder = new DefaultAsyncHttpClientConfig.Builder();
@@ -97,7 +98,7 @@ public final class HttpClientHelper
       sb.append("  Body=[");
       sb.append(req.getStringData());
       sb.append("]\n]");
-      logger.log(level, sb.toString());
+      logger.log(HTTP_DEBUG_LEVEL, sb.toString());
     }
   }
 
@@ -127,7 +128,7 @@ public final class HttpClientHelper
         sb.append("]\n");
       }
       sb.append("]");
-      logger.log(level, sb.toString());
+      logger.log(HTTP_DEBUG_LEVEL, sb.toString());
     }
   }
 
