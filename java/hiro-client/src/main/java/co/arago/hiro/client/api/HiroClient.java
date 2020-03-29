@@ -140,11 +140,19 @@ public interface HiroClient extends Closeable {
   // special calls
   Map apiVersion();
 
+  // get ws event stream
+  // will be removed without notice
+  @Deprecated
+  void getEventStream(Map<String, String> requestParameters, Listener<String> msgListener, Listener<String> metaListener);
+
 //Logs
+  @Deprecated
   void updateLogValues(String logNodeId, List<LogValue> values);
 
+  @Deprecated
   List<LogValue> getLogValues(String logNodeId, long from, long to);
 
+  @Deprecated
   void deleteLogValues(String logNodeId, long from, long to);
 
   Map meAccount(Map<String, String> requestParameters);

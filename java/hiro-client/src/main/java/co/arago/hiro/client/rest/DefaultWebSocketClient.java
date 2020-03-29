@@ -299,7 +299,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         
         if (urlParameters != null && !urlParameters.isEmpty())
         {
-          sb.append("?");
+          sb.append(urlParameters.startsWith("?")?"":"?");
           sb.append(urlParameters);
         }
       }

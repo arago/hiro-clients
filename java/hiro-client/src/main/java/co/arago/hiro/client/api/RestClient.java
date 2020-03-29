@@ -4,6 +4,7 @@ import co.arago.hiro.client.util.Listener;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ public interface RestClient extends Closeable {
   final String HEADER_CONTENT_TYPE = "Content-Type";
   final String HEADER_ACCEPT = "Accept";
   final String HEADER_ON_BEHALF_TOKEN = "On-Behalf-Token";
-  final Charset DEFAULT_ENCODING = Charset.forName("UTF-8");
+  final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
   final String CONTENT_TYPE_DEFAULT = "application/json;charset=UTF-8";
   final String CONTENT_TYPE_OCTECT_STREAM = "application/octet-stream";
   final String CONTENT_TYPE_IMAGE = "image/png";

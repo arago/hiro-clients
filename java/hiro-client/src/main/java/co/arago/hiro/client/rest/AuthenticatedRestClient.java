@@ -1,6 +1,5 @@
 package co.arago.hiro.client.rest;
 
-import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.RestClient;
 import static co.arago.hiro.client.api.RestClient.*;
 import co.arago.hiro.client.api.TokenProvider;
