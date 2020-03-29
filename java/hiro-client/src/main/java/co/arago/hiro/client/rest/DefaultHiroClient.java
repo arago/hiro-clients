@@ -5,14 +5,18 @@ import co.arago.hiro.client.api.LogValue;
 import static co.arago.hiro.client.api.RestClient.*;
 import co.arago.hiro.client.api.TimeseriesValue;
 import co.arago.hiro.client.api.TokenProvider;
+import co.arago.hiro.client.api.WebSocketClient;
+import co.arago.hiro.client.builder.ClientBuilder;
 import co.arago.hiro.client.util.DefaultLogValue;
 import co.arago.hiro.client.util.DefaultTimeseriesValue;
 import co.arago.hiro.client.util.Helper;
 import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.Listener;
+import co.arago.hiro.client.util.Throwables;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +46,8 @@ public class DefaultHiroClient implements HiroClient {
   private final TokenProvider tokenProvider;
   private final String restApiUrl;
   private final Level debugLevel;
+  private final int timeout;
+  private final boolean trustAllCerts;
   
   public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel) {
     this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, "");  // timeout=0 means no setting/default
@@ -73,6 +79,9 @@ public class DefaultHiroClient implements HiroClient {
     this.tokenProvider = tokenProvider;
     this.restApiUrl = restApiUrl;
     this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
+    this.timeout    = timeout;
+    this.trustAllCerts = trustAllCerts;
+    
     LOG.setLevel(this.debugLevel);
   }
   
@@ -410,5 +419,46 @@ public class DefaultHiroClient implements HiroClient {
     paths.add(URL_PATH_ME);
     paths.add(URL_PATH_AVATAR);
     authClient.putBinary(paths, is, HiroCollections.newMap(HEADER_CONTENT_TYPE, contentType));
+  }
+  
+  @Deprecated
+  @Override
+  public void getEventStream(Map<String, String> requestParameters, Listener<String> dataListener, Listener<String> logListener) {
+    LOG.warning("HiroClient#getEventStream is deprecated and will be removed without warning. Use Hiro#newClient()#makeWebSocketClient()!");
+    
+    final Long listeningTime = Long.parseLong(notEmpty(requestParameters.get("timeout"), "timeout"));
+    final ClientBuilder builder = new ClientBuilder();
+    
+    builder.setClient(restClient.client())
+        .setRestApiUrl(restApiUrl)
+        .setDebugRest(debugLevel)
+        .setTimeout(timeout)
+        .setTokenProvider(tokenProvider)
+        .setTrustAllCerts(trustAllCerts);
+    
+    try (WebSocketClient ws = builder.makeWebSocketClient(ClientBuilder.WebsocketType.Event, prepareEventStreamParams(requestParameters), dataListener, logListener);)
+    {
+      Thread.sleep(listeningTime);
+    } catch(Throwable t) {
+      Throwables.unchecked(t);
+    }
+  }
+  
+  private String prepareEventStreamParams(Map<String, String> params) {
+    String ret = "?";
+    if (params.containsKey("groupId")) {
+      ret += "&groupId=" + URLEncoder.encode(params.get("groupId"), DEFAULT_ENCODING);
+    }
+    if (params.containsKey("consumerId")) {
+      ret += "&consumerId=" + URLEncoder.encode(params.get("consumerId"), DEFAULT_ENCODING);
+    }
+    if (params.containsKey("offset")) {
+      ret += "&offset=" + URLEncoder.encode(params.get("offset"), DEFAULT_ENCODING);
+    }
+    if (params.containsKey("delta")) {
+      ret += "&delta=" + URLEncoder.encode(params.get("delta"), DEFAULT_ENCODING);
+    }
+    ret = ret.replace("?&", "");
+    return ret;
   }
 }

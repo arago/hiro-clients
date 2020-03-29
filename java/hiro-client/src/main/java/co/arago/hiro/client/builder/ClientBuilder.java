@@ -10,8 +10,7 @@ import co.arago.hiro.client.rest.DefaultWebSocketClient;
 import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Listener;
-import java.net.URISyntaxException;
-import java.util.concurrent.ExecutionException;
+import co.arago.hiro.client.util.Throwables;
 import java.util.logging.Level;
 import org.asynchttpclient.AsyncHttpClient;
 
@@ -90,16 +89,19 @@ public class ClientBuilder {
       trustAllCerts, debugLevel, timeout, null);
   }
 
-  public WebSocketClient makeWebSocketClient(Listener<String> dataListener, Listener<String> loglistener)
-          throws InterruptedException, ExecutionException, URISyntaxException {
+  public WebSocketClient makeWebSocketClient(Listener<String> dataListener, Listener<String> loglistener) {
     return makeWebSocketClient(WebsocketType.Graph, "", dataListener, loglistener);
   }
   
-  public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener, Listener<String> loglistener)
-          throws InterruptedException, ExecutionException, URISyntaxException {
+  public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener, Listener<String> loglistener) {
     if (client == null) {
       client =  HttpClientHelper.newClient(trustAllCerts, this.timeout);
     }
-    return new DefaultWebSocketClient(restApiUrl, urlParameters, tokenProvider, client, debugLevel, timeout, type, dataListener, loglistener);
+    
+    try {
+      return new DefaultWebSocketClient(restApiUrl, urlParameters, tokenProvider, client, debugLevel, timeout, type, dataListener, loglistener);
+    } catch (Throwable ex) {
+      return Throwables.unchecked(ex);
+    }
   }
 }

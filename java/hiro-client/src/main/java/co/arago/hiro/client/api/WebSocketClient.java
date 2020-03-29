@@ -1,8 +1,9 @@
 package co.arago.hiro.client.api;
 
+import java.io.Closeable;
 import java.util.Map;
 
-public interface WebSocketClient {
+public interface WebSocketClient extends Closeable{
 
   /**
    *
@@ -14,6 +15,4 @@ public interface WebSocketClient {
   long sendMessage(String type, Map<String, String> headers, Map body);
   
   void sendMessage(String message);
-
-  void close();
 }
