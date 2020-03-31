@@ -444,19 +444,19 @@ public class DefaultHiroClient implements HiroClient {
     }
   }
   
-  private String prepareEventStreamParams(Map<String, String> params) {
+  private String prepareEventStreamParams(Map<String, String> params) throws java.io.UnsupportedEncodingException {
     String ret = "?";
     if (params.containsKey("groupId")) {
-      ret += "&groupId=" + URLEncoder.encode(params.get("groupId"), DEFAULT_ENCODING);
+      ret += "&groupId=" + URLEncoder.encode(params.get("groupId"), DEFAULT_ENCODING.displayName());
     }
     if (params.containsKey("consumerId")) {
-      ret += "&consumerId=" + URLEncoder.encode(params.get("consumerId"), DEFAULT_ENCODING);
+      ret += "&consumerId=" + URLEncoder.encode(params.get("consumerId"), DEFAULT_ENCODING.displayName());
     }
     if (params.containsKey("offset")) {
-      ret += "&offset=" + URLEncoder.encode(params.get("offset"), DEFAULT_ENCODING);
+      ret += "&offset=" + URLEncoder.encode(params.get("offset"), DEFAULT_ENCODING.displayName());
     }
     if (params.containsKey("delta")) {
-      ret += "&delta=" + URLEncoder.encode(params.get("delta"), DEFAULT_ENCODING);
+      ret += "&delta=" + URLEncoder.encode(params.get("delta"), DEFAULT_ENCODING.displayName());
     }
     ret = ret.replace("?&", "");
     return ret;
