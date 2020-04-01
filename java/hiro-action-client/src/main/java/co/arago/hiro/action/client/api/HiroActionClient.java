@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public interface HiroActionClient extends Closeable {
 
-  String[] PATH = new String[]{"api", "action", "1.0"};
+  String[] PATH = new String[]{"api", "action", "0.9"};
 
   String URL_PATH_ACTIONHANDLER = "handler";
   String URL_PATH_ACTIONHANDLERS = "handlers";
