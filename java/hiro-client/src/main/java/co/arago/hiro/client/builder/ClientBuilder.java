@@ -26,7 +26,8 @@ public class ClientBuilder {
 
   public enum WebsocketType {
     Graph,
-    Event
+    Event,
+    Action
   }
   
   public ClientBuilder setRestApiUrl(String restApiUrl) {
