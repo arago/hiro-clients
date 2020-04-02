@@ -30,6 +30,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private static final long PING_TIMEOUT = 30 * 1000;
   private static final int MAX_RETRIES = 5;
   public static final String DEFAULT_API_VERSION = "6.1";
+  public static final String ACTION_API_VERSION = "1.0";
   public static final String API_PREFIX = "api";
   private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
   
@@ -283,19 +284,20 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         
         switch(type) {
           case Event:
-            sb.append("event-ws");
+            sb.append("event-ws/" + DEFAULT_API_VERSION);
           break;
 
           case Graph:
-            sb.append("graph-ws");
+            sb.append("graph-ws/" + DEFAULT_API_VERSION);
           break;
+
+          case Action:
+            sb.append("action-ws/" + ACTION_API_VERSION);
+            break;
           
           default:
             throw new IllegalArgumentException("unknown type " + type);
         }
-        
-        sb.append("/");
-        sb.append(DEFAULT_API_VERSION);
         
         if (urlParameters != null && !urlParameters.isEmpty())
         {
@@ -322,6 +324,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
       case Graph:
         return "graph-2.0.0";
+
+      case Action:
+        return "action-1.0.0";
 
       default:
         throw new IllegalArgumentException("unknown type " + type);
