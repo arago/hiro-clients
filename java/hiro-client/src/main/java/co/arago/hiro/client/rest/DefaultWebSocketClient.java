@@ -52,6 +52,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider, AsyncHttpClient client,
           Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
           Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
+    
     if (debugLevel != null) {
       LOG.setLevel(debugLevel);
     }
@@ -284,7 +285,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         
         switch(type) {
           case Event:
-            sb.append("event-ws/" + DEFAULT_API_VERSION);
+            sb.append("events-ws/" + DEFAULT_API_VERSION);
           break;
 
           case Graph:
@@ -305,6 +306,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
           sb.append(urlParameters);
         }
       }
+      
       return sb.toString();
     } catch (URISyntaxException ex) {
       throw new RuntimeException(inUrl, ex);
