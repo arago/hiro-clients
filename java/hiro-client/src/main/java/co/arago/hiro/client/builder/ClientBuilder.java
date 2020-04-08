@@ -13,6 +13,7 @@ import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.Throwables;
 import java.util.logging.Level;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.ws.WebSocketListener;
 
 public class ClientBuilder {
 
@@ -95,12 +96,16 @@ public class ClientBuilder {
   }
   
   public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener, Listener<String> loglistener) {
+    return makeWebSocketClient(type, urlParameters, dataListener, loglistener, null);
+  }
+  
+  public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener, Listener<String> loglistener, WebSocketListener handler) {
     if (client == null) {
       client =  HttpClientHelper.newClient(trustAllCerts, this.timeout);
     }
     
     try {
-      return new DefaultWebSocketClient(restApiUrl, urlParameters, tokenProvider, client, debugLevel, timeout, type, dataListener, loglistener);
+      return new DefaultWebSocketClient(restApiUrl, urlParameters, tokenProvider, client, debugLevel, timeout, type, dataListener, loglistener, handler);
     } catch (Throwable ex) {
       return Throwables.unchecked(ex);
     }

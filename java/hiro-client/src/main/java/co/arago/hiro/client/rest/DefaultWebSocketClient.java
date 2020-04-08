@@ -48,10 +48,11 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private final int timeout;
   private final WebsocketType type;
   private final String urlParameters;
+  private final WebSocketListener handler;
 
   public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider, AsyncHttpClient client,
           Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
-          Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
+          Listener<String> loglistener, WebSocketListener handler) throws InterruptedException, ExecutionException, URISyntaxException {
     
     if (debugLevel != null) {
       LOG.setLevel(debugLevel);
@@ -65,6 +66,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     this.client = client;
     this.type   = type;
     this.urlParameters = urlParameters;
+    this.handler       = handler;
 
     connect(false);
     
@@ -107,6 +109,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             LOG.log(Level.FINEST, "connected " + this);
           }
 
+          if (handler != null) handler.onOpen(websocket);
+          
           process(loglistener, JSONValue.toJSONString(m));
         }
 
@@ -116,6 +120,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             LOG.log(Level.FINEST, "received close " + this);
           }
 
+          if (handler != null) handler.onClose(websocket, code, reason);
+          
           if (running) {
             connect(false);
           } else {
@@ -133,6 +139,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
           if (LOG.isLoggable(Level.FINEST)) {
             LOG.log(Level.FINEST, "received error " + this, t);
           }
+          
+          if (handler != null) handler.onError(t);
 
           if (running) {
             connect(false);
@@ -152,6 +160,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             LOG.log(Level.FINEST, "received message " + payload);
           }
 
+          if (handler != null) handler.onTextFrame(payload, finalFragment, rsv);
+          
           process(dataListener, payload);
         }
 

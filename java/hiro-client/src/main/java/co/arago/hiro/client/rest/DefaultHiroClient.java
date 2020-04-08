@@ -13,6 +13,7 @@ import co.arago.hiro.client.util.Helper;
 import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.Listener;
+import co.arago.hiro.client.util.SimpleWsListener;
 import co.arago.hiro.client.util.Throwables;
 import java.io.IOException;
 import java.io.InputStream;
@@ -436,7 +437,7 @@ public class DefaultHiroClient implements HiroClient {
         .setTokenProvider(tokenProvider)
         .setTrustAllCerts(trustAllCerts);
     
-    try (WebSocketClient ws = builder.makeWebSocketClient(ClientBuilder.WebsocketType.Event, prepareEventStreamParams(requestParameters), dataListener, logListener);)
+    try (WebSocketClient ws = builder.makeWebSocketClient(ClientBuilder.WebsocketType.Event, prepareEventStreamParams(requestParameters), dataListener, logListener, new SimpleWsListener(requestParameters.get("filter")));)
     {
       Thread.sleep(listeningTime);
     } catch(Throwable t) {
