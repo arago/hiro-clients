@@ -2,7 +2,6 @@ package co.arago.hiro.client.rest;
 
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.LogValue;
-import static co.arago.hiro.client.api.RestClient.*;
 import co.arago.hiro.client.api.TimeseriesValue;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.api.WebSocketClient;
@@ -10,7 +9,6 @@ import co.arago.hiro.client.builder.ClientBuilder;
 import co.arago.hiro.client.util.DefaultLogValue;
 import co.arago.hiro.client.util.DefaultTimeseriesValue;
 import co.arago.hiro.client.util.Helper;
-import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.SimpleWsListener;
@@ -26,6 +24,9 @@ import java.util.logging.Logger;
 import net.minidev.json.JSONValue;
 import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
+
+import static co.arago.hiro.client.util.Helper.*;
+import static co.arago.hiro.client.api.RestClient.*;
 
 public class DefaultHiroClient implements HiroClient {
   
@@ -60,7 +61,7 @@ public class DefaultHiroClient implements HiroClient {
 
   // if client is set then trustAllCerts and timeout are already set
   public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client, Level debugLevel) {
-    this(restApiUrl, tokenProvider, null, false, debugLevel, 0, "");  // timeout=0 means no setting/default
+    this(restApiUrl, tokenProvider, client, false, debugLevel, 0, "");  // timeout=0 means no setting/default
   }
 
   // still needed for ClientBuilder => public

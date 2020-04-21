@@ -1,9 +1,7 @@
 package co.arago.hiro.client.auth;
 
-import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
-import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
@@ -20,6 +18,8 @@ import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Response;
+
+import static co.arago.hiro.client.util.Helper.*;
 
 /**
  *
@@ -42,6 +42,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
   private final int invalidateRefreshTokenPeriod = 300000;
 
   private final AsyncHttpClient client;
+  private final boolean clientIsProvided;
   private final String url;
   protected final String apiUrl;
   protected final String clientSecret;
@@ -61,6 +62,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     this.url = notEmpty(url, "url").replaceAll("/+$", "");
     this.clientId = notEmpty(clientId, "clientId");
     this.clientSecret = notEmpty(clientSecret, "clientSecret");
+    this.clientIsProvided = client != null;
     this.client = client == null ? HttpClientHelper.newClient(trustAllCerts) : client;
     if (debugLevel != null) {
       LOG.setLevel(debugLevel);
@@ -167,7 +169,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
   @Override
   public void close() throws IOException {
-    if (client != null) {
+    if (!clientIsProvided && client != null) {
       client.close();
     }
   }
