@@ -14,6 +14,8 @@ public final class DeviceTokenProvider extends AbstractTokenProvider {
 
   private static final String DEVICE_ID = "device_id";
   private static final String DEVICE_SECRET = "device_secret";
+  public static final String DEVICE_AUTH_API_URL = "/api/device/1.0/auth";
+  public static boolean useAuthApi = false;
 
   private final String deviceId;
   private final String deviceSecret;
@@ -47,7 +49,11 @@ public final class DeviceTokenProvider extends AbstractTokenProvider {
 
   @Override
   protected String fullApiUrl() {
-    return apiUrl + "/device";
+    if (useAuthApi) {
+      return apiUrl + "/device";
+    } else {
+      return DEVICE_AUTH_API_URL;
+    }
   }
 
 }
