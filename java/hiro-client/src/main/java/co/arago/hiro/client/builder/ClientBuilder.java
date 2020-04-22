@@ -7,13 +7,14 @@ import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
 import co.arago.hiro.client.rest.DefaultHiroClient;
 import co.arago.hiro.client.rest.DefaultWebSocketClient;
-import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.Throwables;
 import java.util.logging.Level;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ws.WebSocketListener;
+
+import static co.arago.hiro.client.util.Helper.*;
 
 public class ClientBuilder {
 
@@ -49,6 +50,7 @@ public class ClientBuilder {
    *
    * if used the caller is responsible
    * for proper initialization, e.g. setting timeouts
+   * and for proper close on client
    *
    * @param client
    * @return

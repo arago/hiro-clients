@@ -1,10 +1,8 @@
 package co.arago.hiro.client.rest;
 
 import co.arago.hiro.client.api.RestClient;
-import static co.arago.hiro.client.api.RestClient.*;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.auth.FixedTokenProvider;
-import static co.arago.hiro.client.util.Helper.*;
 import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
@@ -36,6 +34,9 @@ import org.jsfr.json.NonBlockingParser;
 import org.jsfr.json.ParsingContext;
 import org.jsfr.json.SurfingConfiguration;
 
+import static co.arago.hiro.client.api.RestClient.*;
+import static co.arago.hiro.client.util.Helper.*;
+
 public class AuthenticatedRestClient implements RestClient {
 
   private static final Logger LOG = Logger.getLogger(AuthenticatedRestClient.class.getName());
@@ -45,6 +46,7 @@ public class AuthenticatedRestClient implements RestClient {
   private final String apiPath;
   private final int timeout;
   private final AsyncHttpClient client;
+  private final boolean clientIsProvided;
   private final Level debugRestLevel;
   private final TokenProvider tokenProvider;
   private final boolean trustAllCerts;
@@ -67,6 +69,7 @@ public class AuthenticatedRestClient implements RestClient {
   public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client, boolean trustAllCerts, Level debugLevel, int timeout, String apiPath) {
     this.timeout = timeout > 0 ? timeout : TIMEOUT;
     this.restApiUrl = notEmpty(restApiUrl, "restApiUrl").endsWith("/") ? restApiUrl.substring(0, restApiUrl.length() - 1) : restApiUrl;
+    this.clientIsProvided = client != null;
     this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, this.timeout) : client;
     this.debugRestLevel = debugLevel != null ? debugLevel : Level.OFF;
     LOG.setLevel(this.debugRestLevel);
@@ -476,7 +479,9 @@ public class AuthenticatedRestClient implements RestClient {
 
   @Override
   public void close() throws IOException {
-    client.close();
+    if (!clientIsProvided) {
+      client.close();
+    }
     tokenProvider.close();
   }
 
