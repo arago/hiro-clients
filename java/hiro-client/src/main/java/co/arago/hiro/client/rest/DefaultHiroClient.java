@@ -29,7 +29,7 @@ import static co.arago.hiro.client.util.Helper.*;
 import static co.arago.hiro.client.api.RestClient.*;
 
 public class DefaultHiroClient implements HiroClient {
-  
+
   private static final Logger LOG = Logger.getLogger(DefaultHiroClient.class.getName());
   // default API: "/", versioned API: /api/<version>/graph/
   public static final String DEFAULT_API_VERSION = "7.1";
@@ -50,11 +50,11 @@ public class DefaultHiroClient implements HiroClient {
   private final Level debugLevel;
   private final int timeout;
   private final boolean trustAllCerts;
-  
+
   public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel) {
     this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, "");  // timeout=0 means no setting/default
   }
-  
+
   public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel, int timeout) {
     this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, "");
   }
@@ -81,45 +81,45 @@ public class DefaultHiroClient implements HiroClient {
     this.tokenProvider = tokenProvider;
     this.restApiUrl = restApiUrl;
     this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
-    this.timeout    = timeout;
+    this.timeout = timeout;
     this.trustAllCerts = trustAllCerts;
-    
+
     LOG.setLevel(this.debugLevel);
   }
-  
+
   @Override
   public void close() throws IOException {
     restClient.close();
     varClient.close();
     authClient.close();
   }
-  
+
   @Override
   public Map getVertex(String vertexId, Map<String, String> reqParams) {
     String result = restClient.get(HiroCollections.newList(notEmpty(vertexId, "vertexId")), reqParams);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map deleteVertex(String vertexId, Map<String, String> reqParams) {
     String result = restClient.delete(HiroCollections.newList(notEmpty(vertexId, "vertexId")), reqParams);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map createVertex(String vertexType, Map v, Map<String, String> reqParams) {
     String result = restClient.post(HiroCollections.newList(URL_PATH_CREATE, notEmpty(vertexType, "vertexType")),
       Helper.composeJson(v), reqParams);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map updateVertex(String vertexId, Map v, Map<String, String> reqParams) {
     String result = restClient.post(HiroCollections.newList(notEmpty(vertexId, "vertexId")),
       Helper.composeJson(v), reqParams);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map connect(String fromVertexId, String edgeType, String toVertexId) {
     Map<String, Object> m = HiroCollections.newMap();
@@ -128,45 +128,45 @@ public class DefaultHiroClient implements HiroClient {
     String result = restClient.post(HiroCollections.newList(URL_PATH_CONNECT, notEmpty(edgeType, "edgeType")), Helper.composeJson(m));
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map disconnect(String fromVertexId, String edgeType, String toVertexId) {
     String result = restClient.delete(HiroCollections.newList(Helper.composeEdgeId(notEmpty(fromVertexId, "fromVertexId"), notEmpty(edgeType, "edgeType"), notEmpty(toVertexId, "toVertexId"))), HiroCollections.newMap());
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public List<Map> getVertexHistory(String vertexId, Map<String, String> queryParams) {
     String result = restClient.get(HiroCollections.newList(notEmpty(vertexId, "vertexId"), URL_PATH_HISTORY), notNull(queryParams, "queryParams"));
     return Helper.parseItemListOfMaps(result);
   }
-  
+
   @Override
   public void historyEvents(Map<String, String> queryParams, Listener<Map> listener) {
     restClient.get(HiroCollections.newList(URL_PATH_EVENTS), notNull(queryParams, "queryParams"), listener);
   }
-  
+
   @Override
   public Map apiVersion() {
     Map<String, String> params = HiroCollections.newMap();
     String result = restClient.get(StringUtils.join(HiroCollections.newList(API_HELP_PREFIX, URL_PATH_VERSION), "/"), params);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public List<Map> vertexQuery(String query, Map<String, String> queryParams) {
     notNull(queryParams, "queryParams").put(PARAM_QUERY, notEmpty(query, "query"));
     String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_VERTICES), Helper.composeJson(queryParams), null);
     return Helper.parseItemListOfMaps(result);
   }
-  
+
   @Override
   public List<Object> vertexQueryObject(String query, Map<String, String> queryParams) {
     notNull(queryParams, "queryParams").put(PARAM_QUERY, notEmpty(query, "query"));
     String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_VERTICES), Helper.composeJson(queryParams), null);
     return parseResponseObject(result);
   }
-  
+
   @Override
   public List<Map> graphQuery(String rootVertex, String query, Map<String, String> queryParams) {
     notNull(queryParams, "queryParams").put(PARAM_QUERY, notEmpty(query, "query"));
@@ -174,7 +174,7 @@ public class DefaultHiroClient implements HiroClient {
     String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_GREMLIN), Helper.composeJson(queryParams), null);
     return Helper.parseItemListOfMaps(result);
   }
-  
+
   @Override
   public List<Object> graphQueryObject(String rootVertex, String query, Map<String, String> queryParams) {
     notNull(queryParams, "queryParams").put(PARAM_QUERY, notEmpty(query, "query"));
@@ -182,7 +182,7 @@ public class DefaultHiroClient implements HiroClient {
     String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_GREMLIN), Helper.composeJson(queryParams), null);
     return parseResponseObject(result);
   }
-  
+
   @Override
   public List<Map> idQuery(List<String> vertexIds, Map<String, String> queryParams) {
     final Map map = HiroCollections.newMap(PARAM_QUERY, StringUtils.join(notEmpty(vertexIds, "vertexIds"), ","));
@@ -191,45 +191,55 @@ public class DefaultHiroClient implements HiroClient {
       Helper.composeJson(map));
     return Helper.parseItemListOfMaps(result);
   }
-  
+
   @Override
   public List<Map> xidQuery(String externalId, Map<String, String> queryParams) {
     String result = restClient.get(HiroCollections.newList(URL_PATH_XID, notEmpty(externalId, "externalId")), notNull(queryParams, "queryParams"));
     return Helper.parseItemListOfMaps(result);
   }
-  
+
   @Override
   public void updateTsValues(String tsNodeId, List<TimeseriesValue> values) {
     restClient.post(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES), Helper.composeJson(notEmpty(values, "values")));
   }
-  
+
   @Override
   public void updateTsValuesSynchronous(String tsNodeId, List<TimeseriesValue> values) {
     restClient.post(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES), Helper.composeJson(notEmpty(values, "values")), HiroCollections.newMap(QUERY_PARAM_TS_SYNC, "true"));
   }
-  
+
+  @Override
+  public void updateTsValues(String tsNodeId, List<TimeseriesValue> values, String ttl) {
+    restClient.post(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES), Helper.composeJson(notEmpty(values, "values")), HiroCollections.newMap(QUERY_PARAM_TS_TTL, ttl));
+  }
+
+  @Override
+  public void updateTsValuesSynchronous(String tsNodeId, List<TimeseriesValue> values, String ttl) {
+    restClient.post(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES), Helper.composeJson(notEmpty(values, "values")), HiroCollections.newMap(QUERY_PARAM_TS_SYNC, "true", QUERY_PARAM_TS_TTL, ttl));
+  }
+
   @Override
   public List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to) {
     return getTsValues(tsNodeId, from, to, HiroCollections.newMap());
   }
-  
+
   @Override
   public List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to, String combinedWith) {
     Map<String, String> queryParams = HiroCollections.newMap();
     if (combinedWith != null && !combinedWith.isEmpty()) {
       queryParams.put(QUERY_PARAM_WITH, combinedWith);
     }
-    
+
     return getTsValues(tsNodeId, from, to, queryParams);
   }
-  
+
   @Override
   public List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to, Map<String, String> queryParams) {
     List<TimeseriesValue> tsvList = HiroCollections.newList();
     Map<String, String> copyParams = HiroCollections.newMap(queryParams);
     copyParams.put(QUERY_PARAM_FROM, Long.toString(from));
     copyParams.put(QUERY_PARAM_TO, Long.toString(to));
-    
+
     Map tmpResult = Helper.parseJsonBody(restClient.get(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES), copyParams));
     // TODO lots of error handling missing:
     if (tmpResult.containsKey(JSON_LIST_INDICATOR)) {
@@ -249,24 +259,24 @@ public class DefaultHiroClient implements HiroClient {
     params.put(QUERY_PARAM_TIMESTAMP, Long.toString(timestamp));
     return Helper.parseJsonBody(restClient.get(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES, URL_PATH_HISTORY), params));
   }
-  
+
   @Override
   public String updateContent(String attachmentNodeId, InputStream is) {
     return (String) Helper.parseJsonBody(restClient.postBinary(HiroCollections.newList(notEmpty(attachmentNodeId, "attachmentNodeId"), URL_PATH_ATTACHMENT), is)).get("contentId");
   }
-  
+
   @Override
   public InputStream getContent(String attachmentNodeId) {
     return restClient.getBinary(HiroCollections.newList(notEmpty(attachmentNodeId, "attachmentNodeId"),
       URL_PATH_ATTACHMENT), HiroCollections.newMap());
   }
-  
+
   @Override
   public InputStream getContent(String attachmentNodeId, Map<String, String> queryParams) {
     return restClient.getBinary(HiroCollections.newList(notEmpty(attachmentNodeId, "attachmentNodeId"),
       URL_PATH_ATTACHMENT), queryParams);
   }
-  
+
   @Override
   public Map setVariable(String name, String description, boolean isTodoVariable) {
     Map<String, Object> map = HiroCollections.newMap();
@@ -277,16 +287,16 @@ public class DefaultHiroClient implements HiroClient {
     } else {
       map.put("ogit/Automation/todo", Boolean.FALSE);
     }
-    
+
     return setVariable(map);
   }
-  
+
   @Override
   public Map setVariable(Map kwargs) {
     String result = varClient.put(HiroCollections.newList(), Helper.composeJson(notNull(kwargs, "kwargs")), null);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map getVariable(String name) {
     Map<String, String> parameters = HiroCollections.newMap();
@@ -294,7 +304,7 @@ public class DefaultHiroClient implements HiroClient {
     String result = varClient.get(HiroCollections.newList(URL_SUBPATH_VAR_DEFINE), parameters);
     return Helper.parseJsonBody(result);
   }
-  
+
   private List<Object> parseResponseObject(String json) {
     Map body = Helper.parseJsonBody(json);
     if (body.containsKey(JSON_LIST_INDICATOR)) {
@@ -303,27 +313,26 @@ public class DefaultHiroClient implements HiroClient {
       throw new RuntimeException("did not find list indicator in JSON response: " + json);
     }
   }
-  
-  
+
   protected List getSubProtocols() {
     final List protocols = new ArrayList();
     protocols.add("events-1.0.0");
     protocols.add("token-" + tokenProvider.getToken());
     return protocols;
   }
-  
+
   @Override
   public void updateLogValues(String logNodeId, List<LogValue> values) {
     restClient.post(HiroCollections.newList(notEmpty(logNodeId, "logNodeId"), URL_PATH_LOGS), JSONValue.toJSONString(notEmpty(values, "values")));
   }
-  
+
   @Override
   public List<LogValue> getLogValues(String logNodeId, long from, long to) {
     List<LogValue> tsvList = HiroCollections.newList();
     Map<String, String> queryParams = HiroCollections.newMap();
     queryParams.put(QUERY_PARAM_FROM, Long.toString(from));
     queryParams.put(QUERY_PARAM_TO, Long.toString(to));
-    
+
     Map tmpResult = Helper.parseJsonBody(restClient.get(HiroCollections.newList(notEmpty(logNodeId, "logNodeId"), URL_PATH_LOGS), queryParams));
     // TODO lots of error handling missing:
     if (tmpResult.containsKey(JSON_LIST_INDICATOR)) {
@@ -336,7 +345,7 @@ public class DefaultHiroClient implements HiroClient {
     }
     return tsvList;
   }
-  
+
   @Override
   public void deleteLogValues(String logNodeId, long from, long to) {
     Map<String, String> queryParams = HiroCollections.newMap();
@@ -344,7 +353,7 @@ public class DefaultHiroClient implements HiroClient {
     queryParams.put(QUERY_PARAM_TO, Long.toString(to));
     restClient.delete(HiroCollections.newList(notEmpty(logNodeId, "logNodeId"), URL_PATH_LOGS), queryParams);
   }
-  
+
   @Override
   public Map getMeProfile() {
     final List paths = HiroCollections.newList();
@@ -353,7 +362,7 @@ public class DefaultHiroClient implements HiroClient {
     final String result = authClient.get(paths, HiroCollections.newMap());
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map updateMeProfile(Map<String, String> attributes) {
     final List paths = HiroCollections.newList();
@@ -362,7 +371,7 @@ public class DefaultHiroClient implements HiroClient {
     final String result = authClient.post(paths, Helper.composeJson(attributes), attributes);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public InputStream getMeAvatar() {
     final List paths = HiroCollections.newList();
@@ -370,7 +379,7 @@ public class DefaultHiroClient implements HiroClient {
     paths.add(URL_PATH_AVATAR);
     return restClient.getBinaryFromStaticLocation(authClient.getRedirectLocation(paths, HiroCollections.newMap()));
   }
-  
+
   @Override
   public Map meAccount(Map<String, String> requestParameters) {
     final List paths = HiroCollections.newList();
@@ -379,7 +388,7 @@ public class DefaultHiroClient implements HiroClient {
     final String result = authClient.get(paths, requestParameters);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public Map mePassword(String oldPassword, String newPassword) {
     final List paths = HiroCollections.newList();
@@ -391,7 +400,7 @@ public class DefaultHiroClient implements HiroClient {
     final String result = authClient.put(paths, Helper.composeJson(params), null);
     return Helper.parseJsonBody(result);
   }
-  
+
   @Override
   public List<Map> meTeams(boolean includeVirtualTeams) {
     final List paths = HiroCollections.newList();
@@ -404,7 +413,7 @@ public class DefaultHiroClient implements HiroClient {
     final String result = authClient.get(paths, params);
     return Helper.parseItemListOfMaps(result);
   }
-  
+
   @Override
   public List<String> meRoles() {
     final List paths = HiroCollections.newList();
@@ -414,7 +423,7 @@ public class DefaultHiroClient implements HiroClient {
     final String result = authClient.get(paths, params);
     return Helper.parseItemListOfStrings(result);
   }
-  
+
   @Override
   public void updateMeAvatar(InputStream is, String contentType) {
     final List paths = HiroCollections.newList();
@@ -422,30 +431,29 @@ public class DefaultHiroClient implements HiroClient {
     paths.add(URL_PATH_AVATAR);
     authClient.putBinary(paths, is, HiroCollections.newMap(HEADER_CONTENT_TYPE, contentType));
   }
-  
+
   @Deprecated
   @Override
   public void getEventStream(Map<String, String> requestParameters, Listener<String> dataListener, Listener<String> logListener) {
     LOG.warning("HiroClient#getEventStream is deprecated and will be removed without warning. Use Hiro#newClient()#makeWebSocketClient()!");
-    
+
     final Long listeningTime = Long.parseLong(notEmpty(requestParameters.get("timeout"), "timeout"));
     final ClientBuilder builder = new ClientBuilder();
-    
+
     builder.setClient(restClient.client())
-        .setRestApiUrl(restApiUrl)
-        .setDebugRest(debugLevel)
-        .setTimeout(timeout)
-        .setTokenProvider(tokenProvider)
-        .setTrustAllCerts(trustAllCerts);
-    
-    try (WebSocketClient ws = builder.makeWebSocketClient(ClientBuilder.WebsocketType.Event, prepareEventStreamParams(requestParameters), dataListener, logListener, new SimpleWsListener(requestParameters.get("filter")));)
-    {
+      .setRestApiUrl(restApiUrl)
+      .setDebugRest(debugLevel)
+      .setTimeout(timeout)
+      .setTokenProvider(tokenProvider)
+      .setTrustAllCerts(trustAllCerts);
+
+    try (WebSocketClient ws = builder.makeWebSocketClient(ClientBuilder.WebsocketType.Event, prepareEventStreamParams(requestParameters), dataListener, logListener, new SimpleWsListener(requestParameters.get("filter")));) {
       Thread.sleep(listeningTime);
-    } catch(Throwable t) {
+    } catch (Throwable t) {
       Throwables.unchecked(t);
     }
   }
-  
+
   private String prepareEventStreamParams(Map<String, String> params) throws java.io.UnsupportedEncodingException {
     String ret = "?";
     if (params.containsKey("groupId")) {

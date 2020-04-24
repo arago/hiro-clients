@@ -73,6 +73,7 @@ public interface HiroClient extends Closeable {
   String QUERY_PARAM_NAME = "name";
   String QUERY_PARAM_DIRECTION = "direction";
   String QUERY_PARAM_TS_SYNC = "synchronous";
+  String QUERY_PARAM_TS_TTL = "ttl";
 
   String QUERY_PARAM_VIRTUAL_TEAMS = "include-virtual";
 
@@ -113,6 +114,10 @@ public interface HiroClient extends Closeable {
   void updateTsValues(String tsNodeId, List<TimeseriesValue> values);
 
   void updateTsValuesSynchronous(String tsNodeId, List<TimeseriesValue> values);
+
+  void updateTsValues(String tsNodeId, List<TimeseriesValue> values, String ttl);
+
+  void updateTsValuesSynchronous(String tsNodeId, List<TimeseriesValue> values, String ttl);
 
   List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to);
 
