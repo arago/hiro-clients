@@ -214,4 +214,60 @@ public class TestHiroClient {
       }
     }
   }
+
+  @Ignore
+  @Test
+  public void testEventWs() throws Exception {
+    WebSocketClient ws = null;
+
+    String graphUrl="https://eu-stagegraph.arago.co";
+    String fixedToken="TOKEN";
+
+
+    try {
+      String urlParameter="offset=largest&delta=true";
+      String filterMessage="{ 'type': 'register', 'args': {'filter-id': 'con1', 'filter-type': 'jfilter','filter-content': '(action=*)' } }";
+      final ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
+      ws = new ClientBuilder()
+              .setRestApiUrl(graphUrl)
+              .setDebugRest(logLevel)
+              .setTimeout(10000)
+              .setTokenProvider(new TokenBuilder().makeFixed(fixedToken))
+              .setTrustAllCerts(true).makeWebSocketClient(ClientBuilder.WebsocketType.Event, urlParameter,
+                      x -> {
+                        queue.add(x);
+                        return Listener.ListenerState.OK;
+                      },new Listener<String>() {
+                        @Override
+                        public Listener.ListenerState process(String entry) {
+                          System.out.println("ws log: " + entry);
+                          return Listener.ListenerState.OK;
+                        }
+                      });
+
+      ws.sendMessage(filterMessage);
+
+      HiroClient client = new ClientBuilder().setRestApiUrl(graphUrl).setTokenProvider(new TokenBuilder().makeFixed(fixedToken)).setTrustAllCerts(true).makeHiroClient();
+
+      Map v = HiroCollections.newMap();
+      v = client.createVertex("ogit/Timeseries", v, HiroCollections.newMap());
+
+      System.out.println("create vertex: v = " + v);
+
+      Thread.sleep(1000);
+
+      final String data = queue.poll();
+      System.out.println("Got data " + data);
+      assertNotNull(data);
+      assertFalse(data.contains("error"));
+
+
+
+    } finally {
+      if (ws != null) {
+        ws.close();
+      }
+    }
+  }
+
 }
