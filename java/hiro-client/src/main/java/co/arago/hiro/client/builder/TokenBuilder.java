@@ -16,46 +16,51 @@ import static co.arago.hiro.client.auth.AbstractTokenProvider.DEFAULT_API_VERSIO
  */
 public final class TokenBuilder {
 
-  private AsyncHttpClient client;
-  private boolean trustAllCerts;
-  private Level debugLevel = Level.OFF;
-  private String apiVersion = DEFAULT_API_VERSION;
+    private AsyncHttpClient client;
+    private boolean trustAllCerts;
+    private Level debugLevel = Level.OFF;
+    private String apiVersion = DEFAULT_API_VERSION;
 
-  public TokenBuilder setClient(AsyncHttpClient client) {
-    this.client = client;
+    public TokenBuilder setClient(AsyncHttpClient client) {
+        this.client = client;
 
-    return this;
+        return this;
 
-  }
-  public TokenBuilder setDebugRest(Level level) {
-    this.debugLevel = level;
-    return this;
-  }
+    }
 
-  public TokenBuilder trustAllCerts() {
-    this.trustAllCerts = true;
+    public TokenBuilder setDebugRest(Level level) {
+        this.debugLevel = level;
+        return this;
+    }
 
-    return this;
-  }
+    public TokenBuilder trustAllCerts() {
+        this.trustAllCerts = true;
 
-  public TokenBuilder setApiVersion(String version) {
-    this.apiVersion = version;
+        return this;
+    }
 
-    return this;
-  }
+    public TokenBuilder setApiVersion(String version) {
+        this.apiVersion = version;
 
-  public TokenProvider makeFixed(String token) {
-    return new FixedTokenProvider(notEmpty(token, "token"));
-  }
+        return this;
+    }
 
-  public TokenProvider makePassword(String url, String clientId, String clientSecret, String userName, String password) {
-    return new PasswordTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel, notEmpty(clientId, "clientId"), notEmpty(clientSecret, "clientSecret"), notEmpty(userName, "userName"), notEmpty(password, "password"), notEmpty(apiVersion, "apiVErsion"));
-  }
-  public TokenProvider makeDevice(String url, String appId, String appSecret, String deviceId, String deviceSecret) {
-    // NOTE: we do not pass apiVersion (device stuff has separate versioning)
-    return new DeviceTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel, notEmpty(appId,
-            "appId"), notEmpty(appSecret, "appSecret"), notEmpty(deviceId, "deviceId"),
-            notEmpty(deviceSecret, "deviceSecret"));
-  }
+    public TokenProvider makeFixed(String token) {
+        return new FixedTokenProvider(notEmpty(token, "token"));
+    }
+
+    public TokenProvider makePassword(String url, String clientId, String clientSecret, String userName,
+            String password) {
+        return new PasswordTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel,
+                notEmpty(clientId, "clientId"), notEmpty(clientSecret, "clientSecret"), notEmpty(userName, "userName"),
+                notEmpty(password, "password"), notEmpty(apiVersion, "apiVErsion"));
+    }
+
+    public TokenProvider makeDevice(String url, String appId, String appSecret, String deviceId, String deviceSecret) {
+        // NOTE: we do not pass apiVersion (device stuff has separate versioning)
+        return new DeviceTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel,
+                notEmpty(appId, "appId"), notEmpty(appSecret, "appSecret"), notEmpty(deviceId, "deviceId"),
+                notEmpty(deviceSecret, "deviceSecret"));
+    }
 
 }

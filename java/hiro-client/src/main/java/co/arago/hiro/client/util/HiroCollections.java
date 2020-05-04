@@ -16,61 +16,61 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class HiroCollections {
 
-  public static Map newMap() {
-    return new HashMap();
-  }
-
-  public static Map newMap(String... items) {
-    final Map map = newMap();
-
-    if ((items.length % 2) != 0) {
-      throw new IllegalArgumentException("arguments need to be even");
+    public static Map newMap() {
+        return new HashMap();
     }
 
-    for (int i = 0, len = items.length - 1; i < len; i += 2) {
-      map.put(items[i], items[i + 1]);
+    public static Map newMap(String... items) {
+        final Map map = newMap();
+
+        if ((items.length % 2) != 0) {
+            throw new IllegalArgumentException("arguments need to be even");
+        }
+
+        for (int i = 0, len = items.length - 1; i < len; i += 2) {
+            map.put(items[i], items[i + 1]);
+        }
+
+        return map;
     }
 
-    return map;
-  }
-
-  public static Map newMap(Map data) {
-    return new HashMap(data);
-  }
-
-  public static ConcurrentMap newConcurrentMap() {
-    return new ConcurrentHashMap();
-  }
-
-  public static ConcurrentMap newConcurrentMap(Map data) {
-    return new ConcurrentHashMap(data);
-  }
-
-  public static List newList() {
-    return new ArrayList();
-  }
-
-  public static List newList(Iterable col) {
-    final List ret = new ArrayList();
-    for (final Object o : col) {
-      ret.add(o);
+    public static Map newMap(Map data) {
+        return new HashMap(data);
     }
 
-    return ret;
-  }
+    public static ConcurrentMap newConcurrentMap() {
+        return new ConcurrentHashMap();
+    }
 
-  public static List newList(Object... items) {
-    return new ArrayList(Arrays.asList(items));
-  }
+    public static ConcurrentMap newConcurrentMap(Map data) {
+        return new ConcurrentHashMap(data);
+    }
 
-  public static Set newSet() {
-    return new HashSet();
-  }
+    public static List newList() {
+        return new ArrayList();
+    }
 
-  public static Set newSet(Collection col) {
-    return new HashSet(col);
-  }
+    public static List newList(Iterable col) {
+        final List ret = new ArrayList();
+        for (final Object o : col) {
+            ret.add(o);
+        }
 
-  private HiroCollections() {
-  }
+        return ret;
+    }
+
+    public static List newList(Object... items) {
+        return new ArrayList(Arrays.asList(items));
+    }
+
+    public static Set newSet() {
+        return new HashSet();
+    }
+
+    public static Set newSet(Collection col) {
+        return new HashSet(col);
+    }
+
+    private HiroCollections() {
+    }
 }
