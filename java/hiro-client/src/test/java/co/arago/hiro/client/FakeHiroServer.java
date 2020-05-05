@@ -34,9 +34,9 @@ import static co.arago.hiro.client.rest.DefaultHiroClient.*;
  */
 public class FakeHiroServer extends NanoHTTPD {
 
-  final class Result {
+    final class Result {
         private final IStatus status;
-      private final String message;
+        private final String message;
 
         public Result(IStatus status, String message) {
             this.message = message;
@@ -53,14 +53,15 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private static final String FAILURE_MSG = "operation failed";
-  private static final String ID_ATTR = "ogit/_id";
-  private static final String URL_PREFIX = "/" + StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), "/");
+    private static final String ID_ATTR = "ogit/_id";
+    private static final String URL_PREFIX = "/"
+            + StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), "/");
 
     private final ConcurrentHashMap<String, String> vertices = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, List<String>> edges = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> blobs = new ConcurrentHashMap<>();
 
-  private static final Level defaultLevel = Level.INFO;
+    private static final Level defaultLevel = Level.INFO;
     private static final Logger LOG = Logger.getLogger(FakeHiroServer.class.getName());
 
     public FakeHiroServer(int port) throws IOException {
@@ -93,46 +94,46 @@ public class FakeHiroServer extends NanoHTTPD {
         return null;
     }
 
-  private static String stripUri(String uri) {
-    if (uri.startsWith(URL_PREFIX)) {
-      return uri.substring(URL_PREFIX.length());
-    } else {
-      return uri;
+    private static String stripUri(String uri) {
+        if (uri.startsWith(URL_PREFIX)) {
+            return uri.substring(URL_PREFIX.length());
+        } else {
+            return uri;
+        }
     }
-  }
 
     private Response handleGet(IHTTPSession session) {
-      Result result;
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "GET " + uri);
-      String[] split = uri.split("/");
+        Result result;
+        String uri = stripUri(session.getUri());
+        LOG.log(defaultLevel, "GET " + uri);
+        String[] split = uri.split("/");
         if (split.length > 2) {
             if (split[1].equals(HiroClient.URL_PATH_QUERY)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_QUERY);
-              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_QUERY);
+                result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else if (split[1].equals(HiroClient.URL_PATH_VARIABLES)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_VARIABLES);
-              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_VARIABLES);
+                result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else {
                 // assume split[1] is a vertex
                 if (split[2].equals(HiroClient.URL_PATH_HISTORY)) {
-                    LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_HISTORY);
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_HISTORY);
                     result = getVertexHistory(split[1], session.getParms());
                 } else if (split[2].equals(HiroClient.URL_PATH_VALUES)) {
-                    LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_VALUES);
-                  result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_VALUES);
+                    result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
                 } else if (split[2].equals(HiroClient.URL_PATH_ATTACHMENT)) {
-                    LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_ATTACHMENT);
-                  result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_ATTACHMENT);
+                    result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
                 } else {
                     // assume neighbour query
                     LOG.log(defaultLevel, "GET Vertex Neighbours");
-                  result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                    result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
                 }
             }
         } else {
             if (split[1].equals(HiroClient.URL_PATH_EVENTS)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_EVENTS);
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_EVENTS);
                 result = getEvents(session.getParms());
             } else {
                 // assume vertex
@@ -147,30 +148,30 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private Response handlePost(IHTTPSession session) throws IOException {
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "POST " + uri);
-      String[] split = uri.split("/");
+        String uri = stripUri(session.getUri());
+        LOG.log(defaultLevel, "POST " + uri);
+        String[] split = uri.split("/");
         Result result;
 
         if (split.length > 2) {
             if (split[1].equals(HiroClient.URL_PATH_CREATE)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_CREATE);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_CREATE);
                 String json = readBody(session.getInputStream());
                 result = doCreate(split[2], json);
             } else if (split[1].equals(HiroClient.URL_PATH_CONNECT)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_CONNECT);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_CONNECT);
                 result = doConnect(split[2], readBody(session.getInputStream()));
             } else if (split[1].equals(HiroClient.URL_PATH_QUERY)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_QUERY);
-              result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_QUERY);
+                result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
             } else if (split[2].equals(HiroClient.URL_PATH_VALUES)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_VALUES);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_VALUES);
                 result = uploadValues(split[1], readBody(session.getInputStream()));
             } else if (split[2].equals(HiroClient.URL_PATH_ATTACHMENT)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_ATTACHMENT);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_ATTACHMENT);
                 result = uploadContent(split[1], readBody(session.getInputStream()));
             } else {
-              result = new Result(Status.INTERNAL_ERROR, asJsonError("Unknown operation for uri " + uri));
+                result = new Result(Status.INTERNAL_ERROR, asJsonError("Unknown operation for uri " + uri));
             }
         } else {
             // assume vertex updata
@@ -183,26 +184,26 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private Response handlePut(IHTTPSession session) throws IOException {
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "PUT " + uri);
-      String[] split = uri.split("/");
-      Result result;
+        String uri = stripUri(session.getUri());
+        LOG.log(defaultLevel, "PUT " + uri);
+        String[] split = uri.split("/");
+        Result result;
 
         if (split[1].equals(HiroClient.URL_PATH_VARIABLES)) {
-            LOG.log(defaultLevel, "PUT /"+HiroClient.URL_PATH_VARIABLES);
+            LOG.log(defaultLevel, "PUT /" + HiroClient.URL_PATH_VARIABLES);
             result = setVariable(readBody(session.getInputStream()));
-      } else {
-        throw new IllegalArgumentException("unsupported PUT requested");
-      }
+        } else {
+            throw new IllegalArgumentException("unsupported PUT requested");
+        }
         Response r = newFixedLengthResponse(result.getMessage());
         r.setStatus(result.getStatus());
         return r;
     }
 
     private Response handleDelete(IHTTPSession session) {
-      String uri = stripUri(session.getUri());
-      LOG.log(defaultLevel, "DELETE " + uri);
-      String[] split = uri.split("/");
+        String uri = stripUri(session.getUri());
+        LOG.log(defaultLevel, "DELETE " + uri);
+        String[] split = uri.split("/");
         Result result;
 
         LOG.log(defaultLevel, "DELETE Vertex or Edge");
@@ -215,7 +216,7 @@ public class FakeHiroServer extends NanoHTTPD {
 
     private Result getVertex(String id, Map<String, String> params) {
         if (!vertices.containsKey(id)) {
-          return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
+            return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
         }
         return new Result(Status.OK, vertices.get(id));
     }
@@ -224,13 +225,14 @@ public class FakeHiroServer extends NanoHTTPD {
         // in this fake we always have only one entry in the history
         // hence we ignore the params
         if (!vertices.containsKey(id)) {
-          return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
+            return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
         }
         return new Result(Status.OK, "{\"" + HiroClient.JSON_LIST_INDICATOR + "\":[" + vertices.get(id) + "]}");
     }
 
     private Result getEvents(Map<String, String> params) {
-        return new Result(Status.OK, "{\"items\":[{\"id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026310752627,\"timestamp\":1502437236523,\"body\":{\"ogit\\/_created-on\":1502437236523,\"\\/marsNodeID\":\"{\\\"ids\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/status\":\"FULFILLED\",\"ogit\\/_id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"\\/formular\":\"{\\\"title\\\":\\\"Get Hostname\\\",\\\"attributes\\\":{\\\"Get\\\":\\\"Hostname\\\"},\\\"nodeid\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"\\/issue-xmlns\":\"https:\\/\\/graphit.co\\/schemas\\/v2\\/IssueSchema\",\"ogit\\/_graphtype\":\"vertex\",\"ogit\\/_owner\":\"mglusiuk@arago.de\",\"ogit\\/_v\":1,\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by-app\":\"Frontend openautopilot\",\"ogit\\/_creator-app\":\"Frontend openautopilot\",\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_version\":\"2.19.0.114\",\"ogit\\/_type\":\"ogit\\/Task\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CREATE\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026341190402,\"timestamp\":1502437236558,\"body\":{\"ogit\\/_created-on\":1502437236558,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236558,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_created\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026344248254,\"timestamp\":1502437236569,\"body\":{\"ogit\\/_created-on\":1502437236569,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236569,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_owns\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"}]}");
+        return new Result(Status.OK,
+                "{\"items\":[{\"id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026310752627,\"timestamp\":1502437236523,\"body\":{\"ogit\\/_created-on\":1502437236523,\"\\/marsNodeID\":\"{\\\"ids\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/status\":\"FULFILLED\",\"ogit\\/_id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"\\/formular\":\"{\\\"title\\\":\\\"Get Hostname\\\",\\\"attributes\\\":{\\\"Get\\\":\\\"Hostname\\\"},\\\"nodeid\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"\\/issue-xmlns\":\"https:\\/\\/graphit.co\\/schemas\\/v2\\/IssueSchema\",\"ogit\\/_graphtype\":\"vertex\",\"ogit\\/_owner\":\"mglusiuk@arago.de\",\"ogit\\/_v\":1,\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by-app\":\"Frontend openautopilot\",\"ogit\\/_creator-app\":\"Frontend openautopilot\",\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_version\":\"2.19.0.114\",\"ogit\\/_type\":\"ogit\\/Task\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CREATE\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026341190402,\"timestamp\":1502437236558,\"body\":{\"ogit\\/_created-on\":1502437236558,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236558,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_created\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026344248254,\"timestamp\":1502437236569,\"body\":{\"ogit\\/_created-on\":1502437236569,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236569,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_owns\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"}]}");
     }
 
     private Result doCreate(String type, String json) {
@@ -251,31 +253,31 @@ public class FakeHiroServer extends NanoHTTPD {
     private Result doUpdate(String id, String json) {
         if (vertices.containsKey(id)) {
             Map m = Helper.parseJsonBody(vertices.get(id));
-          m.putAll(Helper.parseJsonBody(json));
-          for (Object key : m.keySet()) {
-            if (m.get(key) == null) {
-              m.remove(key);
+            m.putAll(Helper.parseJsonBody(json));
+            for (Object key : m.keySet()) {
+                if (m.get(key) == null) {
+                    m.remove(key);
+                }
             }
-          }
             m.put("ogit/_is-deleted", "false");
             m.put("ogit/_graphtype", "vertex");
             m.put("ogit/_id", id);
             vertices.put(id, Helper.composeJson(m));
             return new Result(Status.OK, vertices.get(id));
         } else {
-          return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
+            return new Result(Status.NOT_FOUND, asJsonError("vertex " + id + " does not exist"));
         }
     }
 
-  private Result doConnect(String edgeType, String json) {
+    private Result doConnect(String edgeType, String json) {
         Map m = Helper.parseJsonBody(json);
         String outId = (String) m.get("out");
         String inId = (String) m.get("in");
         if (!vertices.containsKey(outId)) {
-          return new Result(Status.NOT_FOUND, asJsonError("out vertex " + outId + " does not exist"));
+            return new Result(Status.NOT_FOUND, asJsonError("out vertex " + outId + " does not exist"));
         }
         if (!vertices.containsKey(inId)) {
-          return new Result(Status.NOT_FOUND, asJsonError("in vertex " + inId + " does not exist"));
+            return new Result(Status.NOT_FOUND, asJsonError("in vertex " + inId + " does not exist"));
         }
         String edgeId = Helper.composeEdgeId(outId, edgeType, outId);
         edges.put(edgeId, Arrays.asList(outId, inId));
@@ -307,7 +309,7 @@ public class FakeHiroServer extends NanoHTTPD {
             edges.remove(id);
             return new Result(Status.OK, result);
         } else {
-          return new Result(Status.NOT_FOUND, asJsonError("item " + id + " does not exist"));
+            return new Result(Status.NOT_FOUND, asJsonError("item " + id + " does not exist"));
         }
     }
 
@@ -322,7 +324,7 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private Result setVariable(String json) {
-      return new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+        return new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
     }
 
     private String readBody(InputStream is) throws IOException {
@@ -350,8 +352,8 @@ public class FakeHiroServer extends NanoHTTPD {
         return Helper.composeJson(m);
     }
 
-  private String asJsonError(String msg) {
-    return JSONValue.toJSONString(HiroCollections.newMap("error", msg));
-  }
+    private String asJsonError(String msg) {
+        return JSONValue.toJSONString(HiroCollections.newMap("error", msg));
+    }
 
 }

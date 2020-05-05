@@ -9,51 +9,48 @@ import org.asynchttpclient.Response;
 /**
  *
  */
-public final class FixedTokenProvider implements TokenProvider
-{
-  private final String token;
+public final class FixedTokenProvider implements TokenProvider {
+    private final String token;
 
-  public FixedTokenProvider(String token)
-  {
-    this.token = notEmpty(token, "token");
-  }
+    public FixedTokenProvider(String token) {
+        this.token = notEmpty(token, "token");
+    }
 
-  @Override
-  public String getToken()
-  {
-    return token;
-  }
+    @Override
+    public String getToken() {
+        return token;
+    }
 
-  @Override
-  public void close() throws IOException {
-    //
-  }
+    @Override
+    public void close() throws IOException {
+        //
+    }
 
-  @Override
-  public void resetTokenState() {
-  }
+    @Override
+    public void resetTokenState() {
+    }
 
-  @Override
-  public void revokeToken() {
-  }
+    @Override
+    public void revokeToken() {
+    }
 
-  @Override
-  public void revokeToken(boolean resetState) {
-  }
+    @Override
+    public void revokeToken(boolean resetState) {
+    }
 
-  @Override
-  public boolean checkTokenRenewal(Response response) {
-    return false;
-  }
+    @Override
+    public boolean checkTokenRenewal(Response response) {
+        return false;
+    }
 
-  @Override
-  public boolean checkTokenRenewal(int httpResponseCode) {
-    return false;
-  }
+    @Override
+    public boolean checkTokenRenewal(int httpResponseCode) {
+        return false;
+    }
 
-  @Override
-  public void renewToken() {
+    @Override
+    public void renewToken() {
 
-  }
+    }
 
 }

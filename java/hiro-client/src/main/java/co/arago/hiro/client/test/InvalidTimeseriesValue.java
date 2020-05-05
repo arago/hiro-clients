@@ -8,34 +8,34 @@ import net.minidev.json.JSONObject;
 
 public class InvalidTimeseriesValue implements TimeseriesValue {
 
-  private final long timestamp;
-  private final String value;
+    private final long timestamp;
+    private final String value;
 
-  public InvalidTimeseriesValue(long timestamp, String value) {
-    this.timestamp = timestamp;
-    this.value = value;
-  }
+    public InvalidTimeseriesValue(long timestamp, String value) {
+        this.timestamp = timestamp;
+        this.value = value;
+    }
 
-  @Override
-  public long getTimestamp() {
-    return timestamp;
-  }
+    @Override
+    public long getTimestamp() {
+        return timestamp;
+    }
 
-  @Override
-  public String getValue() {
-    return value;
-  }
+    @Override
+    public String getValue() {
+        return value;
+    }
 
-  @Override
-  public String toJSONString() {
-    Map el = HiroCollections.newMap();
-    el.put(JSON_TS_VALUE, getValue());
+    @Override
+    public String toJSONString() {
+        Map el = HiroCollections.newMap();
+        el.put(JSON_TS_VALUE, getValue());
 
-    return JSONObject.toJSONString(el);
-  }
+        return JSONObject.toJSONString(el);
+    }
 
-  @Override
-  public String toString() {
-    return "DefaultTimeseriesValue{" + "timestamp=" + timestamp + ", value=" + value + '}';
-  }
+    @Override
+    public String toString() {
+        return "DefaultTimeseriesValue{" + "timestamp=" + timestamp + ", value=" + value + '}';
+    }
 }

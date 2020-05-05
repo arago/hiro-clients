@@ -19,14 +19,13 @@ import java.util.logging.Logger;
  */
 public class FakeRestServer extends NanoHTTPD {
     private static final String FAILURE_MSG = "operation failed";
-    
+
     private static Level defaultLevel = Level.INFO;
     private static final Logger LOG = Logger.getLogger(FakeRestServer.class.getName());
-    
-    
+
     public FakeRestServer(int port) throws IOException {
         super(port);
-        
+
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
     }
 
@@ -36,14 +35,14 @@ public class FakeRestServer extends NanoHTTPD {
         Map<String, String> headers = session.getHeaders();
         Map<String, String> parms = session.getParms();
         String name = session.getMethod().name();
-        Map<String,Object> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
         result.put("uri", uri);
         result.put("method", name);
         result.put("headers", headers);
         result.put("params", parms);
-        
+
         String response = Helper.composeJson(result);
-        System.out.println("R="+response);
+        System.out.println("R=" + response);
         return newFixedLengthResponse(response);
-    } 
+    }
 }

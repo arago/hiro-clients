@@ -19,11 +19,10 @@ public class DefaultTimeseriesValue implements TimeseriesValue {
     private final long timestamp;
     private final String value;
 
-  public DefaultTimeseriesValue(long timestamp, String value)
-  {
-    this.timestamp = timestamp;
-    this.value = value;
-  }
+    public DefaultTimeseriesValue(long timestamp, String value) {
+        this.timestamp = timestamp;
+        this.value = value;
+    }
 
     @Override
     public long getTimestamp() {
@@ -35,19 +34,17 @@ public class DefaultTimeseriesValue implements TimeseriesValue {
         return value;
     }
 
-  @Override
-  public String toJSONString()
-  {
-    Map el = HiroCollections.newMap();
-    el.put(JSON_TS_VALUE, getValue());
-    el.put(JSON_TS_TIMESTAMP, getTimestamp());
+    @Override
+    public String toJSONString() {
+        Map el = HiroCollections.newMap();
+        el.put(JSON_TS_VALUE, getValue());
+        el.put(JSON_TS_TIMESTAMP, getTimestamp());
 
-    return JSONObject.toJSONString(el);
-  }
+        return JSONObject.toJSONString(el);
+    }
 
-  @Override
-  public String toString()
-  {
-    return "DefaultTimeseriesValue{" + "timestamp=" + timestamp + ", value=" + value + '}';
-  }
+    @Override
+    public String toString() {
+        return "DefaultTimeseriesValue{" + "timestamp=" + timestamp + ", value=" + value + '}';
+    }
 }
