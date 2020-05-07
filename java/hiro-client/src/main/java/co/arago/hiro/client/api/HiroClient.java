@@ -144,6 +144,7 @@ public interface HiroClient extends Closeable {
 
     // special calls
     Map apiVersion();
+    Map apiVersions();
 
     // get ws event stream
     // will be removed without notice

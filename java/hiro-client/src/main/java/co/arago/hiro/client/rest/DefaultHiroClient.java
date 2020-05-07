@@ -164,6 +164,14 @@ public class DefaultHiroClient implements HiroClient {
     }
 
     @Override
+    public Map apiVersions() {
+        Map<String, String> params = HiroCollections.newMap();
+        String result = restClient
+                .get(StringUtils.join(HiroCollections.newList(API_PREFIX, URL_PATH_VERSION+"s"), "/"), params);
+        return Helper.parseJsonBody(result);
+    }
+
+    @Override
     public List<Map> vertexQuery(String query, Map<String, String> queryParams) {
         notNull(queryParams, "queryParams").put(PARAM_QUERY, notEmpty(query, "query"));
         String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_VERTICES),
