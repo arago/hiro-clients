@@ -39,8 +39,6 @@ public class DefaultHiroClient implements HiroClient {
     public static final String AUTH_API_VERSION = "6.1";
     public static final String VAR_API_VERSION = "6";
     public static final String VAR_API_SUFFIX = URL_PATH_VARIABLES;
-    public static final String EVENT_STREAM_VERSION = "6.1";
-    public static final String EVENT_STREAM_SUFFIX = "events-ws";
     private final AuthenticatedRestClient restClient;
     private final AuthenticatedRestClient varClient;
     private final AuthenticatedRestClient authClient;
@@ -168,6 +166,15 @@ public class DefaultHiroClient implements HiroClient {
         String result = restClient
                 .get(StringUtils.join(HiroCollections.newList(API_PREFIX, URL_PATH_VERSION+"s"), "/"), params);
         return Helper.parseJsonBody(result);
+    }
+
+    @Override
+    public Map clientVersions() {
+        Map<String, String> versions = HiroCollections.newMap();
+        versions.put(API_SUFFIX, DEFAULT_API_VERSION);
+        versions.put(VAR_API_SUFFIX, VAR_API_VERSION);
+        versions.put(AUTH_API_SUFFIX, AUTH_API_VERSION);
+        return versions;
     }
 
     @Override
