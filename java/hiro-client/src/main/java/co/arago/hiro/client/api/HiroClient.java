@@ -30,6 +30,7 @@ public interface HiroClient extends Closeable {
         }
     }
 
+    String URL_SEPARATOR = "/";
     String EDGE_ID_SEPARATOR = "$$";
     String JSON_ERROR_INDICATOR = "error";
     String JSON_LIST_INDICATOR = "items";

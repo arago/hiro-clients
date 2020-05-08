@@ -13,6 +13,8 @@ import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.SimpleWsListener;
 import co.arago.hiro.client.util.Throwables;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -68,19 +70,19 @@ public class DefaultHiroClient implements HiroClient {
             boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
         String apiPath;
         if (apiVersion != null && !apiVersion.isEmpty()) {
-            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, apiVersion, API_SUFFIX), "/");
+            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, apiVersion, API_SUFFIX), URL_SEPARATOR);
         } else if (apiVersion != null && apiVersion.isEmpty()) {
             apiPath = "";// 6.0 graph
         } else {
-            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), "/");
+            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), URL_SEPARATOR);
         }
 
         this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
                 timeout, apiPath);
         this.varClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
-                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION), "/"));
+                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION), URL_SEPARATOR));
         this.authClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
-                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION), "/"));
+                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION), URL_SEPARATOR));
         this.tokenProvider = tokenProvider;
         this.restApiUrl = restApiUrl;
         this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
