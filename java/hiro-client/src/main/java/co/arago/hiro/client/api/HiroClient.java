@@ -30,6 +30,7 @@ public interface HiroClient extends Closeable {
         }
     }
 
+    String URL_SEPARATOR = "/";
     String EDGE_ID_SEPARATOR = "$$";
     String JSON_ERROR_INDICATOR = "error";
     String JSON_LIST_INDICATOR = "items";
@@ -143,7 +144,11 @@ public interface HiroClient extends Closeable {
     // TODO: add variable search methods?
 
     // special calls
-    Map apiVersion();
+    Map apiVersion(); // server versions latest
+
+    Map apiVersions(); // server versions all: list per API key
+
+    Map clientVersions(); // client/library versions: one per key
 
     // get ws event stream
     // will be removed without notice
