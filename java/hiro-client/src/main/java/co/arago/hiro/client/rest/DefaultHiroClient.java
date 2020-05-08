@@ -74,15 +74,18 @@ public class DefaultHiroClient implements HiroClient {
         } else if (apiVersion != null && apiVersion.isEmpty()) {
             apiPath = "";// 6.0 graph
         } else {
-            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION), URL_SEPARATOR);
+            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
+                    URL_SEPARATOR);
         }
 
         this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
                 timeout, apiPath);
         this.varClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
-                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION), URL_SEPARATOR));
+                timeout,
+                StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION), URL_SEPARATOR));
         this.authClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
-                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION), URL_SEPARATOR));
+                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION),
+                        URL_SEPARATOR));
         this.tokenProvider = tokenProvider;
         this.restApiUrl = restApiUrl;
         this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
@@ -167,7 +170,7 @@ public class DefaultHiroClient implements HiroClient {
     public Map apiVersions() {
         Map<String, String> params = HiroCollections.newMap();
         String result = restClient
-                .get(StringUtils.join(HiroCollections.newList(API_PREFIX, URL_PATH_VERSION+"s"), "/"), params);
+                .get(StringUtils.join(HiroCollections.newList(API_PREFIX, URL_PATH_VERSION + "s"), "/"), params);
         return Helper.parseJsonBody(result);
     }
 

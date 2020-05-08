@@ -145,7 +145,9 @@ public interface HiroClient extends Closeable {
 
     // special calls
     Map apiVersion(); // server versions latest
+
     Map apiVersions(); // server versions all: list per API key
+
     Map clientVersions(); // client/library versions: one per key
 
     // get ws event stream
