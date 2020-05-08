@@ -34,6 +34,7 @@ public class DefaultHiroClient implements HiroClient {
     // default API: "/", versioned API: /api/<version>/graph/
     public static final String DEFAULT_API_VERSION = "7.1";
     public static final String API_PREFIX = "api";
+    public static final String API_HELP_PREFIX = "help";
     public static final String API_SUFFIX = "graph";
     public static final String AUTH_API_SUFFIX = "auth";
     public static final String AUTH_API_VERSION = "6.1";
@@ -156,7 +157,7 @@ public class DefaultHiroClient implements HiroClient {
     public Map apiVersion() {
         Map<String, String> params = HiroCollections.newMap();
         String result = restClient
-                .get(StringUtils.join(HiroCollections.newList(API_PREFIX, URL_PATH_VERSION), "/"), params);
+                .get(StringUtils.join(HiroCollections.newList(API_HELP_PREFIX, URL_PATH_VERSION), "/"), params);
         return Helper.parseJsonBody(result);
     }
 
