@@ -70,7 +70,7 @@ public class DefaultHiroClient implements HiroClient {
             boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
         String apiPath;
         if (apiVersion != null && !apiVersion.isEmpty()) {
-            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, apiVersion, API_SUFFIX), URL_SEPARATOR);
+            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, apiVersion), URL_SEPARATOR);
         } else if (apiVersion != null && apiVersion.isEmpty()) {
             apiPath = "";// 6.0 graph
         } else {
