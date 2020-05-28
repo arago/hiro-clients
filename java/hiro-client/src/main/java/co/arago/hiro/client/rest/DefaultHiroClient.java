@@ -14,7 +14,6 @@ import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.SimpleWsListener;
 import co.arago.hiro.client.util.Throwables;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -29,17 +28,21 @@ import org.asynchttpclient.AsyncHttpClient;
 
 import static co.arago.hiro.client.util.Helper.*;
 import static co.arago.hiro.client.api.RestClient.*;
+import co.arago.hiro.client.util.HiroException;
+import co.arago.hiro.client.util.HttpClientHelper;
+import java.util.concurrent.ExecutionException;
+import org.asynchttpclient.Response;
 
 public class DefaultHiroClient implements HiroClient {
 
     private static final Logger LOG = Logger.getLogger(DefaultHiroClient.class.getName());
     // default API: "/", versioned API: /api/<version>/graph/
-    public static final String DEFAULT_API_VERSION = "7.1";
+    public static final String DEFAULT_API_VERSION = "7.2";
     public static final String API_PREFIX = "api";
     public static final String API_HELP_PREFIX = "help";
     public static final String API_SUFFIX = "graph";
     public static final String AUTH_API_SUFFIX = "auth";
-    public static final String AUTH_API_VERSION = "6.1";
+    public static final String AUTH_API_VERSION = "6.2";
     public static final String VAR_API_VERSION = "6";
     public static final String VAR_API_SUFFIX = URL_PATH_VARIABLES;
     private final AuthenticatedRestClient restClient;
@@ -68,24 +71,54 @@ public class DefaultHiroClient implements HiroClient {
     // still needed for ClientBuilder => public
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
             boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
-        String apiPath;
+        String apiPath = "";
+        String appPath = "";
+        String authPath = "";
+
         if (apiVersion != null && !apiVersion.isEmpty()) {
             apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, apiVersion), URL_SEPARATOR);
         } else if (apiVersion != null && apiVersion.isEmpty()) {
             apiPath = "";// 6.0 graph
         } else {
-            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
-                    URL_SEPARATOR);
+            try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
+                final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
+                final Map info = Helper.parseJsonBody(r.getResponseBody());
+                final String version = (String) ((Map) info.get(API_SUFFIX)).get("version");
+                if (DEFAULT_API_VERSION.charAt(0) != version.charAt(0)) {
+                    throw new HiroException("Invalid major api version for " + API_SUFFIX + " expected: "
+                            + DEFAULT_API_VERSION.charAt(0) + " found: " + version.charAt(0), 500);
+                }
+                apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, version), URL_SEPARATOR);
+                final String varVersion = (String) ((Map) info.get(VAR_API_SUFFIX)).get("version");
+                if (VAR_API_VERSION.charAt(0) != varVersion.charAt(0)) {
+                    throw new HiroException("Invalid major api version for " + VAR_API_SUFFIX + " expected: "
+                            + VAR_API_VERSION.charAt(0) + " found: " + version.charAt(0), 500);
+                }
+                appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion),
+                        URL_SEPARATOR);
+                final String authVersion = (String) ((Map) info.get(AUTH_API_SUFFIX)).get("version");
+                if (AUTH_API_VERSION.charAt(0) != authVersion.charAt(0)) {
+                    throw new HiroException("Invalid major api version for " + AUTH_API_SUFFIX + " expected: "
+                            + AUTH_API_VERSION.charAt(0) + " found: " + authVersion.charAt(0), 500);
+                }
+                authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, authVersion),
+                        URL_SEPARATOR);
+            } catch (InterruptedException | ExecutionException | IOException ex) {
+                LOG.log(debugLevel, "api version discovery failed using default", ex);
+                apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
+                        URL_SEPARATOR);
+                appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION),
+                        URL_SEPARATOR);
+                authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION),
+                        URL_SEPARATOR);
+            }
         }
-
         this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
                 timeout, apiPath);
         this.varClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
-                timeout,
-                StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION), URL_SEPARATOR));
+                timeout, appPath);
         this.authClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
-                timeout, StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION),
-                        URL_SEPARATOR));
+                timeout, authPath);
         this.tokenProvider = tokenProvider;
         this.restApiUrl = restApiUrl;
         this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
@@ -93,6 +126,7 @@ public class DefaultHiroClient implements HiroClient {
         this.trustAllCerts = trustAllCerts;
 
         LOG.setLevel(this.debugLevel);
+
     }
 
     @Override

@@ -3,6 +3,7 @@ package co.arago.hiro.action.client.rest;
 import co.arago.hiro.action.client.api.HiroActionClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
+import static co.arago.hiro.client.rest.DefaultHiroClient.API_PREFIX;
 import co.arago.hiro.client.util.Helper;
 import co.arago.hiro.client.util.HiroCollections;
 import java.io.IOException;
@@ -14,9 +15,15 @@ import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 
 import static co.arago.hiro.client.util.Helper.*;
+import co.arago.hiro.client.util.HiroException;
+import co.arago.hiro.client.util.HttpClientHelper;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
+import org.asynchttpclient.Response;
 
 public class DefaultHiroActionClient implements HiroActionClient {
 
+    private static final Logger LOG = Logger.getLogger(DefaultHiroActionClient.class.getName());
     private final AuthenticatedRestClient restClient;
 
     public DefaultHiroActionClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts,
@@ -27,14 +34,32 @@ public class DefaultHiroActionClient implements HiroActionClient {
     public DefaultHiroActionClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
             boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
         String apiPath = "";
-        if (apiVersion != null && !apiVersion.isEmpty()) {
-            apiPath = StringUtils
-                    .join(HiroCollections.newList(HiroActionClient.PATH[0], apiVersion, HiroActionClient.PATH[2]), "/");
-        } else {
-            apiPath = StringUtils.join(HiroCollections.newList(HiroActionClient.PATH[0], HiroActionClient.PATH[1],
-                    HiroActionClient.PATH[2]), "/");
-        }
+        try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
+            if (apiVersion != null && !apiVersion.isEmpty()) {
+                apiPath = StringUtils.join(
+                        HiroCollections.newList(HiroActionClient.PATH[0], apiVersion, HiroActionClient.PATH[2]), "/");
+            } else {
+                try {
+                    final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute()
+                            .get();
+                    final String version = (String) ((Map) Helper.parseJsonBody(r.getResponseBody())
+                            .get(HiroActionClient.PATH[1])).get("version");
+                    if (HiroActionClient.PATH[2].charAt(0) != version.charAt(0)) {
+                        throw new HiroException("Invalid major api version for " + HiroActionClient.PATH[1]
+                                + " expected: " + HiroActionClient.PATH[2].charAt(0) + " found: " + version.charAt(0),
+                                500);
+                    }
+                    apiPath = StringUtils.join(
+                            HiroCollections.newList(HiroActionClient.PATH[0], HiroActionClient.PATH[1], version), "/");
+                } catch (InterruptedException | ExecutionException ex) {
+                    LOG.log(debugLevel, "api version discovery failed using default", ex);
+                    apiPath = StringUtils.join(HiroCollections.newList(HiroActionClient.PATH[0],
+                            HiroActionClient.PATH[1], HiroActionClient.PATH[2]), "/");
+                }
 
+            }
+        } catch (IOException ex) {
+        }
         restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout,
                 apiPath);
     }
