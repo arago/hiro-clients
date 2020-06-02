@@ -44,10 +44,10 @@ public class DefaultHiroActionClient implements HiroActionClient {
                             .get();
                     final String version = (String) ((Map) Helper.parseJsonBody(r.getResponseBody())
                             .get(HiroActionClient.PATH[1])).get("version");
-                    if (HiroActionClient.PATH[2].charAt(0) != version.charAt(0)) {
+                    if (!HiroActionClient.PATH[2].split("\\.")[0].equals(version.split("\\.")[0])) {
                         throw new HiroException("Invalid major api version for " + HiroActionClient.PATH[1]
-                                + " expected: " + HiroActionClient.PATH[2].charAt(0) + " found: " + version.charAt(0),
-                                500);
+                                + " expected: " + HiroActionClient.PATH[2].split("\\.")[0] + " found: "
+                                + version.split("\\.")[0], 500);
                     }
                     apiPath = StringUtils.join(
                             HiroCollections.newList(HiroActionClient.PATH[0], HiroActionClient.PATH[1], version), "/");

@@ -84,22 +84,22 @@ public class DefaultHiroClient implements HiroClient {
                 final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
                 final Map info = Helper.parseJsonBody(r.getResponseBody());
                 final String version = (String) ((Map) info.get(API_SUFFIX)).get("version");
-                if (DEFAULT_API_VERSION.charAt(0) != version.charAt(0)) {
+                if (!DEFAULT_API_VERSION.split("\\.")[0].equals(version.split("\\.")[0])) {
                     throw new HiroException("Invalid major api version for " + API_SUFFIX + " expected: "
-                            + DEFAULT_API_VERSION.charAt(0) + " found: " + version.charAt(0), 500);
+                            + DEFAULT_API_VERSION.split("\\.")[0] + " found: " + version.split("\\.")[0], 500);
                 }
                 apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, version), URL_SEPARATOR);
                 final String varVersion = (String) ((Map) info.get(VAR_API_SUFFIX)).get("version");
-                if (VAR_API_VERSION.charAt(0) != varVersion.charAt(0)) {
+                if (!VAR_API_VERSION.equals(varVersion)) {
                     throw new HiroException("Invalid major api version for " + VAR_API_SUFFIX + " expected: "
-                            + VAR_API_VERSION.charAt(0) + " found: " + version.charAt(0), 500);
+                            + VAR_API_VERSION + " found: " + version, 500);
                 }
                 appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion),
                         URL_SEPARATOR);
                 final String authVersion = (String) ((Map) info.get(AUTH_API_SUFFIX)).get("version");
-                if (AUTH_API_VERSION.charAt(0) != authVersion.charAt(0)) {
+                if (!AUTH_API_VERSION.split("\\.")[0].equals(authVersion.split("\\.")[0])) {
                     throw new HiroException("Invalid major api version for " + AUTH_API_SUFFIX + " expected: "
-                            + AUTH_API_VERSION.charAt(0) + " found: " + authVersion.charAt(0), 500);
+                            + AUTH_API_VERSION.split("\\.")[0] + " found: " + authVersion.split("\\.")[0], 500);
                 }
                 authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, authVersion),
                         URL_SEPARATOR);
