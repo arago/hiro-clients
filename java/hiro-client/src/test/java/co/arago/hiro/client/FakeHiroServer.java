@@ -35,6 +35,7 @@ import static co.arago.hiro.client.rest.DefaultHiroClient.*;
 public class FakeHiroServer extends NanoHTTPD {
 
     final class Result {
+
         private final IStatus status;
         private final String message;
 
@@ -125,10 +126,17 @@ public class FakeHiroServer extends NanoHTTPD {
                 } else if (split[2].equals(HiroClient.URL_PATH_ATTACHMENT)) {
                     LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_ATTACHMENT);
                     result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                } else if (split[2].equals(HiroClient.URL_PATH_VERSION)) {
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_VERSION);
+                    result = new Result(Status.OK,
+                            "{\"iam\": {\"endpoint\": \"/api/iam/6.1/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"iam.yaml\", \"version\": \"6.1\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"authz\": {\"endpoint\": \"/api/authz/6.1/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"authz.yaml\", \"version\": \"6.1\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"app-admin\": {\"endpoint\": \"/api/app-admin/1.2/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"app-admin.yaml\", \"version\": \"1.2\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"logs\": {\"endpoint\": \"/api/logs/0.9/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"unsupported\", \"specs\": \"\", \"version\": \"0.9\", \"lifecycle\": \"deprecated\", \"protocols\": \"\"}, \"events-ws\": {\"endpoint\": \"/api/events-ws/6.1/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"events-ws.yaml\", \"version\": \"6.1\", \"lifecycle\": \"deprecated\", \"protocols\": \"events-1.0.0\"}, \"graph\": {\"endpoint\": \"/api/graph/7.2/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"graph.yaml\", \"version\": \"7.2\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"app\": {\"endpoint\": \"/api/app/7.0/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"app.yaml\", \"version\": \"7.0\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"action-ws\": {\"endpoint\": \"/api/action-ws/1.0/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"action-ws.yaml\", \"version\": \"1.0\", \"lifecycle\": \"stable\", \"protocols\": \"action-1.0.0\"}, \"auth\": {\"endpoint\": \"/api/auth/6.2/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"auth.yaml\", \"version\": \"6.2\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"ki\": {\"endpoint\": \"/api/ki/6/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"unsupported\", \"specs\": \"ki.yaml\", \"version\": \"6\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"objects\": {\"endpoint\": \"/api/objects/1.0/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"objects.yaml\", \"version\": \"1.0\", \"lifecycle\": \"experimental\", \"protocols\": \"\"}, \"health\": {\"endpoint\": \"/api/health/7.0/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"health.yaml\", \"version\": \"7.0\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"action\": {\"endpoint\": \"/api/action/1.0/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"action.yaml\", \"version\": \"1.0\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"variables\": {\"endpoint\": \"/api/variables/6/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"unsupported\", \"specs\": \"variables.yaml\", \"version\": \"6\", \"lifecycle\": \"stable\", \"protocols\": \"\"}, \"graph-ws\": {\"endpoint\": \"/api/graph-ws/6.1/\", \"docs\": \"https://developer.hiro.arago.co/api\", \"support\": \"supported\", \"specs\": \"graph-ws.yaml\", \"version\": \"6.1\", \"lifecycle\": \"stable\", \"protocols\": \"graph-2.0.0\"}}");
+                } else if (split[4].equals(HiroClient.URL_PATH_EVENTS)) {
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_EVENTS);
+                    result = getEvents(session.getParms());
                 } else {
-                    // assume neighbour query
-                    LOG.log(defaultLevel, "GET Vertex Neighbours");
-                    result = new Result(Status.NOT_IMPLEMENTED, asJsonError("NOT IMPLEMENTED, YET"));
+                    // assume vertex
+                    LOG.log(defaultLevel, "GET Vertex");
+                    result = getVertex(split[1], session.getParms());
                 }
             }
         } else {
@@ -152,7 +160,6 @@ public class FakeHiroServer extends NanoHTTPD {
         LOG.log(defaultLevel, "POST " + uri);
         String[] split = uri.split("/");
         Result result;
-
         if (split.length > 2) {
             if (split[1].equals(HiroClient.URL_PATH_CREATE)) {
                 LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_CREATE);
@@ -174,7 +181,7 @@ public class FakeHiroServer extends NanoHTTPD {
                 result = new Result(Status.INTERNAL_ERROR, asJsonError("Unknown operation for uri " + uri));
             }
         } else {
-            // assume vertex updata
+            // assume vertex update
             LOG.log(defaultLevel, "POST Vertex");
             result = doUpdate(split[1], readBody(session.getInputStream()));
         }
