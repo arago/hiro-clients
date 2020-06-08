@@ -26,7 +26,7 @@ import static co.arago.hiro.client.util.Helper.*;
  */
 public abstract class AbstractTokenProvider implements TokenProvider, Closeable {
 
-    public static final String DEFAULT_API_VERSION = "6.1";
+    public static final String DEFAULT_API_VERSION = "6";
     public static final String API_PREFIX = "/api";
     public static final String API_SUFFIX = "auth";
 
