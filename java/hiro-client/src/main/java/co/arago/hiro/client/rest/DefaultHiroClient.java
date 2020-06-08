@@ -37,12 +37,12 @@ public class DefaultHiroClient implements HiroClient {
 
     private static final Logger LOG = Logger.getLogger(DefaultHiroClient.class.getName());
     // default API: "/", versioned API: /api/<version>/graph/
-    public static final String DEFAULT_API_VERSION = "7.2";
+    public static final String DEFAULT_API_VERSION = "7";
     public static final String API_PREFIX = "api";
     public static final String API_HELP_PREFIX = "help";
     public static final String API_SUFFIX = "graph";
     public static final String AUTH_API_SUFFIX = "auth";
-    public static final String AUTH_API_VERSION = "6.2";
+    public static final String AUTH_API_VERSION = "6";
     public static final String VAR_API_VERSION = "6";
     public static final String VAR_API_SUFFIX = URL_PATH_VARIABLES;
     private final AuthenticatedRestClient restClient;
