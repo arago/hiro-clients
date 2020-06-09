@@ -92,8 +92,7 @@ public class DefaultHiroClient implements HiroClient {
                 throw new HiroException("Invalid major api version for " + VAR_API_SUFFIX + " expected: "
                         + VAR_API_VERSION + " found: " + version, 500);
             }
-            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion),
-                    URL_SEPARATOR);
+            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion), URL_SEPARATOR);
             apiVersionInfo.put(VAR_API_SUFFIX, varVersion);
             final String authVersion = (String) ((Map) info.get(AUTH_API_SUFFIX)).get("version");
             if (!AUTH_API_VERSION.split("\\.")[0].equals(authVersion.split("\\.")[0])) {
@@ -220,7 +219,7 @@ public class DefaultHiroClient implements HiroClient {
     @Override
     public Map clientVersions() {
         Map<String, String> versions = HiroCollections.newMap();
-        for (Object key: apiVersionInfo.keySet()) {
+        for (Object key : apiVersionInfo.keySet()) {
             versions.put((String) key, (String) apiVersionInfo.get(key));
         }
         return versions;
