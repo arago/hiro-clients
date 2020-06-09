@@ -53,6 +53,7 @@ public class DefaultHiroClient implements HiroClient {
     private final Level debugLevel;
     private final int timeout;
     private final boolean trustAllCerts;
+    private final Map apiVersionInfo;
 
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel) {
         this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, ""); // timeout=0 means no setting/default
@@ -74,6 +75,7 @@ public class DefaultHiroClient implements HiroClient {
         String apiPath = "";
         String appPath = "";
         String authPath = "";
+        apiVersionInfo = HiroCollections.newMap();
 
         if (apiVersion != null && !apiVersion.isEmpty()) {
             apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, apiVersion), URL_SEPARATOR);
@@ -89,6 +91,7 @@ public class DefaultHiroClient implements HiroClient {
                             + DEFAULT_API_VERSION.split("\\.")[0] + " found: " + version.split("\\.")[0], 500);
                 }
                 apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, version), URL_SEPARATOR);
+                apiVersionInfo.put(API_SUFFIX, version);
                 final String varVersion = (String) ((Map) info.get(VAR_API_SUFFIX)).get("version");
                 if (!VAR_API_VERSION.equals(varVersion)) {
                     throw new HiroException("Invalid major api version for " + VAR_API_SUFFIX + " expected: "
@@ -96,6 +99,7 @@ public class DefaultHiroClient implements HiroClient {
                 }
                 appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion),
                         URL_SEPARATOR);
+                apiVersionInfo.put(VAR_API_SUFFIX, varVersion);
                 final String authVersion = (String) ((Map) info.get(AUTH_API_SUFFIX)).get("version");
                 if (!AUTH_API_VERSION.split("\\.")[0].equals(authVersion.split("\\.")[0])) {
                     throw new HiroException("Invalid major api version for " + AUTH_API_SUFFIX + " expected: "
@@ -103,14 +107,18 @@ public class DefaultHiroClient implements HiroClient {
                 }
                 authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, authVersion),
                         URL_SEPARATOR);
+                apiVersionInfo.put(AUTH_API_SUFFIX, authVersion);
             } catch (InterruptedException | ExecutionException | IOException ex) {
                 LOG.log(debugLevel, "api version discovery failed using default", ex);
                 apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
                         URL_SEPARATOR);
+                apiVersionInfo.put(API_SUFFIX, DEFAULT_API_VERSION);
                 appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION),
                         URL_SEPARATOR);
+                apiVersionInfo.put(VAR_API_SUFFIX, VAR_API_VERSION);
                 authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION),
                         URL_SEPARATOR);
+                apiVersionInfo.put(AUTH_API_SUFFIX, AUTH_API_VERSION);
             }
         }
         this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
@@ -211,9 +219,9 @@ public class DefaultHiroClient implements HiroClient {
     @Override
     public Map clientVersions() {
         Map<String, String> versions = HiroCollections.newMap();
-        versions.put(API_SUFFIX, DEFAULT_API_VERSION);
-        versions.put(VAR_API_SUFFIX, VAR_API_VERSION);
-        versions.put(AUTH_API_SUFFIX, AUTH_API_VERSION);
+        for (Object key: apiVersionInfo.keySet()) {
+            versions.put((String) key, (String) apiVersionInfo.get(key));
+        }
         return versions;
     }
 
