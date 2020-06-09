@@ -77,49 +77,50 @@ public class DefaultHiroClient implements HiroClient {
         String authPath = "";
         apiVersionInfo = HiroCollections.newMap();
 
+        try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
+            final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
+            final Map info = Helper.parseJsonBody(r.getResponseBody());
+            final String version = (String) ((Map) info.get(API_SUFFIX)).get("version");
+            if (!DEFAULT_API_VERSION.split("\\.")[0].equals(version.split("\\.")[0])) {
+                throw new HiroException("Invalid major api version for " + API_SUFFIX + " expected: "
+                        + DEFAULT_API_VERSION.split("\\.")[0] + " found: " + version.split("\\.")[0], 500);
+            }
+            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, version), URL_SEPARATOR);
+            apiVersionInfo.put(API_SUFFIX, version);
+            final String varVersion = (String) ((Map) info.get(VAR_API_SUFFIX)).get("version");
+            if (!VAR_API_VERSION.equals(varVersion)) {
+                throw new HiroException("Invalid major api version for " + VAR_API_SUFFIX + " expected: "
+                        + VAR_API_VERSION + " found: " + version, 500);
+            }
+            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion),
+                    URL_SEPARATOR);
+            apiVersionInfo.put(VAR_API_SUFFIX, varVersion);
+            final String authVersion = (String) ((Map) info.get(AUTH_API_SUFFIX)).get("version");
+            if (!AUTH_API_VERSION.split("\\.")[0].equals(authVersion.split("\\.")[0])) {
+                throw new HiroException("Invalid major api version for " + AUTH_API_SUFFIX + " expected: "
+                        + AUTH_API_VERSION.split("\\.")[0] + " found: " + authVersion.split("\\.")[0], 500);
+            }
+            authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, authVersion),
+                    URL_SEPARATOR);
+            apiVersionInfo.put(AUTH_API_SUFFIX, authVersion);
+        } catch (InterruptedException | ExecutionException | IOException ex) {
+            LOG.log(debugLevel, "api version discovery failed using default", ex);
+            apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
+                    URL_SEPARATOR);
+            apiVersionInfo.put(API_SUFFIX, DEFAULT_API_VERSION);
+            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION),
+                    URL_SEPARATOR);
+            apiVersionInfo.put(VAR_API_SUFFIX, VAR_API_VERSION);
+            authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION),
+                    URL_SEPARATOR);
+            apiVersionInfo.put(AUTH_API_SUFFIX, AUTH_API_VERSION);
+        }
         if (apiVersion != null && !apiVersion.isEmpty()) {
             apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, apiVersion), URL_SEPARATOR);
+            apiVersionInfo.put(API_SUFFIX, apiVersion);
         } else if (apiVersion != null && apiVersion.isEmpty()) {
-            apiPath = "";// 6.0 graph
-        } else {
-            try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
-                final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
-                final Map info = Helper.parseJsonBody(r.getResponseBody());
-                final String version = (String) ((Map) info.get(API_SUFFIX)).get("version");
-                if (!DEFAULT_API_VERSION.split("\\.")[0].equals(version.split("\\.")[0])) {
-                    throw new HiroException("Invalid major api version for " + API_SUFFIX + " expected: "
-                            + DEFAULT_API_VERSION.split("\\.")[0] + " found: " + version.split("\\.")[0], 500);
-                }
-                apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, version), URL_SEPARATOR);
-                apiVersionInfo.put(API_SUFFIX, version);
-                final String varVersion = (String) ((Map) info.get(VAR_API_SUFFIX)).get("version");
-                if (!VAR_API_VERSION.equals(varVersion)) {
-                    throw new HiroException("Invalid major api version for " + VAR_API_SUFFIX + " expected: "
-                            + VAR_API_VERSION + " found: " + version, 500);
-                }
-                appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion),
-                        URL_SEPARATOR);
-                apiVersionInfo.put(VAR_API_SUFFIX, varVersion);
-                final String authVersion = (String) ((Map) info.get(AUTH_API_SUFFIX)).get("version");
-                if (!AUTH_API_VERSION.split("\\.")[0].equals(authVersion.split("\\.")[0])) {
-                    throw new HiroException("Invalid major api version for " + AUTH_API_SUFFIX + " expected: "
-                            + AUTH_API_VERSION.split("\\.")[0] + " found: " + authVersion.split("\\.")[0], 500);
-                }
-                authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, authVersion),
-                        URL_SEPARATOR);
-                apiVersionInfo.put(AUTH_API_SUFFIX, authVersion);
-            } catch (InterruptedException | ExecutionException | IOException ex) {
-                LOG.log(debugLevel, "api version discovery failed using default", ex);
-                apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
-                        URL_SEPARATOR);
-                apiVersionInfo.put(API_SUFFIX, DEFAULT_API_VERSION);
-                appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION),
-                        URL_SEPARATOR);
-                apiVersionInfo.put(VAR_API_SUFFIX, VAR_API_VERSION);
-                authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION),
-                        URL_SEPARATOR);
-                apiVersionInfo.put(AUTH_API_SUFFIX, AUTH_API_VERSION);
-            }
+            apiPath = "";// 6.0 graph. deprecated
+            apiVersionInfo.put(API_SUFFIX, "");
         }
         this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
                 timeout, apiPath);
