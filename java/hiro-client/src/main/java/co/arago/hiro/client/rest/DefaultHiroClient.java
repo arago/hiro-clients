@@ -76,7 +76,7 @@ public class DefaultHiroClient implements HiroClient {
         String appPath = "";
         String authPath = "";
         apiVersionInfo = HiroCollections.newMap();
-
+        this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
         try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
             final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
             final Map info = Helper.parseJsonBody(r.getResponseBody());
@@ -129,7 +129,6 @@ public class DefaultHiroClient implements HiroClient {
                 timeout, authPath);
         this.tokenProvider = tokenProvider;
         this.restApiUrl = restApiUrl;
-        this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
         this.timeout = timeout;
         this.trustAllCerts = trustAllCerts;
 
