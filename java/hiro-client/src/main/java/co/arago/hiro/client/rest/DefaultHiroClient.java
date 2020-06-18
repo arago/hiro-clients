@@ -103,7 +103,7 @@ public class DefaultHiroClient implements HiroClient {
                     URL_SEPARATOR);
             apiVersionInfo.put(AUTH_API_SUFFIX, authVersion);
         } catch (InterruptedException | ExecutionException | IOException ex) {
-            LOG.log(debugLevel, "api version discovery failed using default", ex);
+            LOG.log(this.debugLevel, "api version discovery failed using default", ex);
             apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
                     URL_SEPARATOR);
             apiVersionInfo.put(API_SUFFIX, DEFAULT_API_VERSION);
