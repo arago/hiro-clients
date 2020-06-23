@@ -68,24 +68,25 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         this.urlParameters = urlParameters;
         this.handler = handler;
 
-        connect(false);
+        connect(false, true);
 
         executor.scheduleWithFixedDelay(() -> ping(), PING_TIMEOUT, PING_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
-    private void connect(boolean waitForIt) {
+    private void connect(boolean waitForIt, boolean initial) {
         if (!running) {
             return;
         }
 
-        closeWs();
+        if (!initial) {
+            closeWs();
+        }
 
         if (waitForIt) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 closeWs();
-
                 Throwables.unchecked(ex);
             }
         }
@@ -107,51 +108,59 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                     LOG.log(Level.FINEST, "connected " + this);
                 }
 
-                if (handler != null)
+                if (handler != null) {
                     handler.onOpen(websocket);
+                }
 
                 process(loglistener, JSONValue.toJSONString(m));
             }
 
             @Override
             public void onClose(WebSocket websocket, int code, String reason) {
+                final Map m = HiroCollections.newMap();
+                m.put("type", "close");
+                m.put("code", code);
+                m.put("reason", reason);
+
                 if (LOG.isLoggable(Level.FINEST)) {
                     LOG.log(Level.FINEST, "received close " + this);
                 }
 
-                if (handler != null)
+                if (handler != null) {
                     handler.onClose(websocket, code, reason);
+                }
 
-                if (running) {
-                    connect(false);
-                } else {
-                    final Map m = HiroCollections.newMap();
-                    m.put("type", "close");
-                    m.put("code", code);
-                    m.put("reason", reason);
+                process(loglistener, JSONValue.toJSONString(m));
 
-                    process(loglistener, JSONValue.toJSONString(m));
+                if (running && !initial) {
+                    connect(false, initial);
                 }
             }
 
             @Override
             public void onError(Throwable t) {
+                final Map m = HiroCollections.newMap();
+                m.put("type", "error");
+                m.put("message", t.getMessage());
+                m.put("stack", stacktrace(t));
+
                 if (LOG.isLoggable(Level.FINEST)) {
                     LOG.log(Level.FINEST, "received error " + this, t);
                 }
 
-                if (handler != null)
+                if (handler != null) {
                     handler.onError(t);
+                }
 
-                if (running) {
-                    connect(false);
-                } else {
-                    final Map m = HiroCollections.newMap();
-                    m.put("type", "error");
-                    m.put("message", t.getMessage());
-                    m.put("stack", stacktrace(t));
+                process(loglistener, JSONValue.toJSONString(m));
 
-                    process(loglistener, JSONValue.toJSONString(m));
+                if (WebsocketType.Event == type) {
+                    close();
+                    throw new HiroException("connection closed", 400);
+                }
+
+                if (running && !initial) {
+                    connect(false, initial);
                 }
             }
 
@@ -161,16 +170,18 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                     LOG.log(Level.FINEST, "received message " + payload);
                 }
 
-                if (handler != null)
+                if (handler != null) {
                     handler.onTextFrame(payload, finalFragment, rsv);
+                }
 
                 process(dataListener, payload);
             }
 
             @Override
             public void onPingFrame(byte[] payload) {
-                if (webSocketClient != null && webSocketClient.isOpen())
+                if (webSocketClient != null && webSocketClient.isOpen()) {
                     webSocketClient.sendPongFrame(payload);
+                }
             }
         }).build();
 
@@ -204,8 +215,12 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
     @Override
     public synchronized void sendMessage(String message) {
+        if (!running) {
+            throw new HiroException("connection closed", 400);
+        }
+
         if (webSocketClient == null || !webSocketClient.isOpen()) {
-            connect(false);
+            connect(false, false);
         }
 
         if (LOG.isLoggable(Level.FINEST)) {
@@ -216,16 +231,15 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             webSocketClient.sendTextFrame(message).get(timeout, TimeUnit.MILLISECONDS);
             retries = 0;
         } catch (Throwable ex) {
-            if (retries < MAX_RETRIES) {
+            if (running && webSocketClient.isOpen() && retries < MAX_RETRIES) {
                 LOG.log(Level.WARNING, "send failed, retrying", ex);
 
                 ++retries;
-                connect(true);
+                connect(true, false);
 
                 sendMessage(message);
             } else {
                 closeWs();
-
                 Throwables.unchecked(ex);
             }
         }
@@ -360,14 +374,13 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     private String stacktrace(Throwable t) {
-        if (t == null)
+        if (t == null) {
             return "";
+        }
 
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
-
         t.printStackTrace(pw);
-
         return sw.toString();
     }
 }
