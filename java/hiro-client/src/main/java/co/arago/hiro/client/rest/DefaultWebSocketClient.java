@@ -174,6 +174,18 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                     handler.onTextFrame(payload, finalFragment, rsv);
                 }
 
+                Object o = JSONValue.parse(payload);
+                if (o instanceof Map && ((Map) o).containsKey("error")) {
+                    Map error = (Map) ((Map) o).get("error");
+                    if ((int) error.get("code") == 401) {
+                        tokenProvider.renewToken();
+                        connect(false, false);
+                        return;
+                    } else if (WebsocketType.Event == type) {
+                        throw new HiroException((String) error.get("message"), (int) error.get("code"));
+                    }
+                }
+
                 process(dataListener, payload);
             }
 
