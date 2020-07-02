@@ -1,7 +1,7 @@
 /*
-* To change this license header, choose License Headers in Project Properties.
-* To change this template file, choose Tools | Templates
-* and open the template in the editor.
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package co.arago.hiro.client;
 
@@ -25,11 +25,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -225,18 +226,21 @@ public class TestHiroClient {
             String urlParameter = "offset=largest&delta=true";
             String filterMessage = "{ 'type': 'register', 'args': {'filter-id': 'con1', 'filter-type': 'jfilter','filter-content': '(action=*)' } }";
             final ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
-            ws = new ClientBuilder().setRestApiUrl(graphUrl).setDebugRest(logLevel).setTimeout(10000)
-                    .setTokenProvider(new TokenBuilder().makeFixed(fixedToken)).setTrustAllCerts(true)
-                    .makeWebSocketClient(ClientBuilder.WebsocketType.Event, urlParameter, x -> {
-                        queue.add(x);
-                        return Listener.ListenerState.OK;
-                    }, new Listener<String>() {
-                        @Override
-                        public Listener.ListenerState process(String entry) {
-                            System.out.println("ws log: " + entry);
+
+            try {
+                ws = new ClientBuilder().setRestApiUrl(graphUrl).setDebugRest(logLevel).setTimeout(10000)
+                        .setTokenProvider(new TokenBuilder().makeFixed(fixedToken)).setTrustAllCerts(true)
+                        .makeWebSocketClient(ClientBuilder.WebsocketType.Event, urlParameter, data -> {
+                            queue.add(data);
                             return Listener.ListenerState.OK;
-                        }
-                    });
+                        }, log -> {
+                            System.out.println("ws log: " + log);
+                            return Listener.ListenerState.OK;
+                        });
+            } catch (Throwable t) {
+                t.printStackTrace();
+                fail("can not crete client");
+            }
 
             ws.sendMessage(filterMessage);
 
@@ -254,7 +258,6 @@ public class TestHiroClient {
             System.out.println("Got data " + data);
             assertNotNull(data);
             assertFalse(data.contains("error"));
-
         } finally {
             if (ws != null) {
                 ws.close();
