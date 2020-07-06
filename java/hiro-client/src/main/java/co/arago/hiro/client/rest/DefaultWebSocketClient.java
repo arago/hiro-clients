@@ -14,6 +14,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,6 +26,7 @@ import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 public final class DefaultWebSocketClient implements WebSocketClient {
+  private static final long PING_TIMEOUT = 30 * 1000;
   private static final int MAX_RETRIES = 5;
   private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
   private volatile WebSocket webSocketClient;
@@ -38,10 +41,12 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   private final int timeout;
   private final WebsocketType type;
   private final String urlParameters;
+  private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
   public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider, AsyncHttpClient client,
-          Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
-          Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
+    Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
+    Listener<String> loglistener) throws InterruptedException, ExecutionException, URISyntaxException {
+
     if (debugLevel != null) {
       LOG.setLevel(debugLevel);
     }
@@ -52,87 +57,113 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     this.loglistener = loglistener;
     this.dataListener = dataListener;
     this.client = client;
-    this.type   = type;
+    this.type = type;
     this.urlParameters = urlParameters;
 
-    connect(false);
+    connect(false, true);
+
+    executor.scheduleWithFixedDelay(() -> ping(), PING_TIMEOUT, PING_TIMEOUT, TimeUnit.MILLISECONDS);
   }
 
-  private void connect(boolean waitForIt) {
+  private void connect(boolean waitForIt, boolean initial) {
     if (!running) {
       return;
     }
 
-    close0();
+    if (initial) {
+      close0();
+    }
 
     if (waitForIt) {
       try {
         Thread.sleep(1000);
       } catch (InterruptedException ex) {
         close();
-
         Throwables.unchecked(ex);
       }
     }
 
     WebSocketUpgradeHandler.Builder upgradeHandlerBuilder
-            = new WebSocketUpgradeHandler.Builder();
+      = new WebSocketUpgradeHandler.Builder();
 
     WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
-            .addWebSocketListener(new WebSocketListener() {
-              @Override
-              public void onOpen(WebSocket websocket) {
-                final Map m = HiroCollections.newMap();
-                m.put("type", "open");
-                m.put("open", websocket.isOpen());
+      .addWebSocketListener(new WebSocketListener() {
+        @Override
+        public void onOpen(WebSocket websocket) {
+          final Map m = HiroCollections.newMap();
+          m.put("type", "open");
+          m.put("open", websocket.isOpen());
 
-                process(loglistener, JSONValue.toJSONString(m));
-              }
+        process(loglistener, JSONValue.toJSONString(m));
+      }
 
-              @Override
-              public void onClose(WebSocket websocket, int code, String reason) {
-                if (running) {
-                  connect(false);
-                } else {
-                  final Map m = HiroCollections.newMap();
-                  m.put("type", "close");
-                  m.put("code", code);
-                  m.put("reason", reason);
+      @Override
+      public void onClose(WebSocket websocket, int code, String reason) {
+        final Map m = HiroCollections.newMap();
+        m.put("type", "close");
+        m.put("code", code);
+        m.put("reason", reason);
 
-                  process(loglistener, JSONValue.toJSONString(m));
-                }
-              }
+          if (LOG.isLoggable(Level.FINEST)) {
+            LOG.log(Level.FINEST, "received close " + this);
+          }
 
-              @Override
-              public void onError(Throwable t) {
-                if (running) {
-                  connect(false);
-                } else {
-                  final Map m = HiroCollections.newMap();
-                  m.put("type", "error");
-                  m.put("message", t.getMessage());
-                  m.put("stack", stacktrace(t));
+          process(loglistener, JSONValue.toJSONString(m));
 
-                  process(loglistener, JSONValue.toJSONString(m));
-                }
-              }
+        if (running) {
+          connect(false, initial);
+        }
+      }
 
-              @Override
-              public void onTextFrame(String payload, boolean finalFragment, int rsv) {
-                process(dataListener, payload);
-              }
+      @Override
+      public void onError(Throwable t) {
+        final Map m = HiroCollections.newMap();
+        m.put("type", "error");
+        m.put("message", t.getMessage());
+        m.put("stack", stacktrace(t));
 
-              @Override
-              public void onPingFrame(byte[] payload) {
-                if (webSocketClient != null && webSocketClient.isOpen()) webSocketClient.sendPongFrame(payload);
-              }
-            }).build();
+          process(loglistener, JSONValue.toJSONString(m));
+
+          if (WebsocketType.Event == type) {
+            close();
+            throw new HiroException("connection closed", 400);
+          }
+
+        if (running && !initial) {
+          connect(false, initial);
+        }
+      }
+
+      @Override
+      public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+          Object o = JSONValue.parse(payload);
+          if (o instanceof Map && ((Map) o).containsKey("error")) {
+            Map error = (Map) ((Map) o).get("error");
+            if ((int) error.get("code") == 401) {
+              tokenProvider.renewToken();
+              connect(false, false);
+              return;
+            } else if (WebsocketType.Event == type) {
+              throw new HiroException((String) error.get("message"), (int) error.get("code"));
+            }
+          }
+
+        process(dataListener, payload);
+      }
+
+        @Override
+        public void onPingFrame(byte[] payload) {
+          if (webSocketClient != null && webSocketClient.isOpen()) {
+            webSocketClient.sendPongFrame(payload);
+          }
+        }
+      }).build();
     try {
       webSocketClient = client
-              .prepareGet(composeWsUrl(restApiUrl))
-              .addHeader("Sec-WebSocket-Protocol", getProtocol() + ", token-" + tokenProvider.getToken())
-              .setRequestTimeout(timeout)
-              .execute(wsHandler)
+        .prepareGet(composeWsUrl(restApiUrl))
+        .addHeader("Sec-WebSocket-Protocol", getProtocol() + ", token-" + tokenProvider.getToken())
+        .setRequestTimeout(timeout)
+        .execute(wsHandler)
         .get(timeout, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
       close();
@@ -148,32 +179,30 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
   }
 
-  
   @Override
   public void sendMessage(String message) {
     if (webSocketClient == null || !webSocketClient.isOpen()) {
-      connect(false);
+      connect(false, false);
     }
 
     try {
       webSocketClient.sendTextFrame(message).get(timeout, TimeUnit.MILLISECONDS);
       retries = 0;
     } catch (Throwable ex) {
-      if (retries < MAX_RETRIES) {
+      if (running && webSocketClient.isOpen() && retries < MAX_RETRIES) {
         LOG.log(Level.WARNING, "send failed, retrying", ex);
 
         ++retries;
-        connect(true);
+        connect(true, false);
 
         sendMessage(message);
       } else {
         close();
-
         Throwables.unchecked(ex);
       }
     }
   }
-  
+
   @Override
   public synchronized int sendMessage(String type, Map<String, String> headers, Map body) {
     ++idCounter;
@@ -183,21 +212,20 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     request.put("type", type);
     request.put("headers", headers);
     request.put("body", body);
-    
+
     sendMessage(Helper.composeJson(request));
-    
+
     return idCounter;
   }
 
   @Override
   public synchronized void close() {
     running = false;
-
     close0();
+    executor.shutdownNow();
   }
-  
-  private void close0()
-  {
+
+  private void close0() {
     if (webSocketClient != null && webSocketClient.isOpen()) {
       try {
         webSocketClient.sendCloseFrame(200, "OK").get(timeout, TimeUnit.MILLISECONDS);
@@ -226,27 +254,25 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         sb.append(":");
         sb.append(uri.getPort());
       }
-      
-      switch(type)
-      {
+
+      switch (type) {
         case Event:
           sb.append("/_events");
-        break;
-        
+          break;
+
         case Graph:
           sb.append("/_g");
-        break;
-        
+          break;
+
         default:
           throw new IllegalArgumentException("unknown type " + type);
       }
-      
-      if (urlParameters != null && !urlParameters.isEmpty())
-      {
+
+      if (urlParameters != null && !urlParameters.isEmpty()) {
         sb.append("?");
         sb.append(urlParameters);
       }
-      
+
       return sb.toString();
     } catch (URISyntaxException ex) {
       throw new RuntimeException(inUrl, ex);
@@ -259,8 +285,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
   }
 
   private String getProtocol() {
-    switch(type)
-    {
+    switch (type) {
       case Event:
         return "events-1.0.0";
 
@@ -282,15 +307,17 @@ public final class DefaultWebSocketClient implements WebSocketClient {
       }
     }
   }
-  
+
   private String stacktrace(Throwable t) {
-    if (t == null) return "";
-    
+    if (t == null) {
+      return "";
+    }
+
     final StringWriter sw = new StringWriter();
     final PrintWriter pw = new PrintWriter(sw);
-    
+
     t.printStackTrace(pw);
-    
+
     return sw.toString();
   }
 }
