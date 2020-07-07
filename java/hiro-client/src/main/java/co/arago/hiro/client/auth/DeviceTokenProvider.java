@@ -1,11 +1,10 @@
 package co.arago.hiro.client.auth;
 
-import org.asynchttpclient.AsyncHttpClient;
-
 import java.util.Map;
 import java.util.logging.Level;
+import org.asynchttpclient.AsyncHttpClient;
 
-import static co.arago.hiro.client.util.Helper.notEmpty;
+import static co.arago.hiro.client.util.Helper.*;
 
 /**
  *
@@ -14,8 +13,6 @@ public final class DeviceTokenProvider extends AbstractTokenProvider {
 
     private static final String DEVICE_ID = "device_id";
     private static final String DEVICE_SECRET = "device_secret";
-    public static final String DEVICE_AUTH_API_URL = "/api/device/1.0/auth";
-    public static boolean useAuthApi = false;
 
     private final String deviceId;
     private final String deviceSecret;
@@ -46,11 +43,7 @@ public final class DeviceTokenProvider extends AbstractTokenProvider {
 
     @Override
     protected String fullApiUrl() {
-        if (useAuthApi) {
-            return apiUrl + "/device";
-        } else {
-            return DEVICE_AUTH_API_URL;
-        }
+        return apiUrl + "/device";
     }
 
 }
