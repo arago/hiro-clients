@@ -40,24 +40,24 @@ public class AuthenticatedRestClient implements RestClient {
     public static final List REDIRECT_CODES = HiroCollections.newList(301, 302, 303, 307, 308);
 
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts,
-                                   Level debugLevel) {
+            Level debugLevel) {
         this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, null);
     }
 
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts,
-                                   Level debugLevel, int timeout) {
+            Level debugLevel, int timeout) {
         this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, null);
     }
 
     // if client is set then trustAllCerts and timeout are already set
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
-                                   Level debugLevel) {
+            Level debugLevel) {
         this(restApiUrl, tokenProvider, client, false, debugLevel, 0, null);
     }
 
     // still needed for ClientBuilder => public
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
-                                   boolean trustAllCerts, Level debugLevel, int timeout, String apiPath) {
+            boolean trustAllCerts, Level debugLevel, int timeout, String apiPath) {
         this.timeout = timeout > 0 ? timeout : TIMEOUT;
         this.restApiUrl = notEmpty(restApiUrl, "restApiUrl").endsWith("/")
                 ? restApiUrl.substring(0, restApiUrl.length() - 1) : restApiUrl;
@@ -78,7 +78,7 @@ public class AuthenticatedRestClient implements RestClient {
     public void get(List<String> path, Map<String, String> params, Listener<Map> listener) {
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "operation: {0} path: {1} params: {2}",
-                    new Object[]{"GET", composeUrl(path), params});
+                    new Object[] { "GET", composeUrl(path), params });
         }
         BoundRequestBuilder prepareGet = client().prepareGet(composeUrl(path));
         runAsyncRequest(prepareGet, params, listener, true);
@@ -93,7 +93,7 @@ public class AuthenticatedRestClient implements RestClient {
     public String get(List<String> path, String body, Map<String, String> params) {
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "operation: {0} path: {1} params: {2}",
-                    new Object[]{"GET", composeUrl(path), params});
+                    new Object[] { "GET", composeUrl(path), params });
         }
         BoundRequestBuilder prepareGet = client().prepareGet(composeUrl(path));
         return runRequest(prepareGet, body, params);
@@ -102,7 +102,7 @@ public class AuthenticatedRestClient implements RestClient {
     @Override
     public String get(String path, Map<String, String> params) {
         if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "operation: {0} path: {1} params: {2}", new Object[]{"GET", path, params});
+            LOG.log(Level.FINER, "operation: {0} path: {1} params: {2}", new Object[] { "GET", path, params });
         }
         BoundRequestBuilder prepareGet = client().prepareGet(restApiUrl + "/" + path);
         return runRequest(prepareGet, null, params);
@@ -112,7 +112,7 @@ public class AuthenticatedRestClient implements RestClient {
     @Override
     public String post(List<String> path, String body) {
         if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "operation: {0} path: {1} body: {2}", new Object[]{"POST", composeUrl(path), body});
+            LOG.log(Level.FINER, "operation: {0} path: {1} body: {2}", new Object[] { "POST", composeUrl(path), body });
         }
         BoundRequestBuilder preparePost = client().preparePost(composeUrl(path));
         return runRequest(preparePost, body, null);
@@ -122,7 +122,7 @@ public class AuthenticatedRestClient implements RestClient {
     public String post(List<String> path, String body, Map<String, String> params) {
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "operation: {0} path: {1} body: {2} params: {3}",
-                    new Object[]{"POST", composeUrl(path), body, params});
+                    new Object[] { "POST", composeUrl(path), body, params });
         }
         BoundRequestBuilder preparePost = client().preparePost(composeUrl(path));
         return runRequest(preparePost, body, params);
@@ -132,7 +132,7 @@ public class AuthenticatedRestClient implements RestClient {
     public String put(List<String> path, String body, Map<String, String> params) {
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "operation: {0} path: {1} body: {2} params: {3}",
-                    new Object[]{"PUT", composeUrl(path), body, params});
+                    new Object[] { "PUT", composeUrl(path), body, params });
         }
         BoundRequestBuilder preparePut = client().preparePut(composeUrl(path));
         return runRequest(preparePut, body, params);
@@ -142,7 +142,7 @@ public class AuthenticatedRestClient implements RestClient {
     public String patch(List<String> path, String body, Map<String, String> params) {
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "operation: {0} path: {1} body: {2} params: {3}",
-                    new Object[]{"PATCH", composeUrl(path), body, params});
+                    new Object[] { "PATCH", composeUrl(path), body, params });
         }
         BoundRequestBuilder request = client().preparePatch(composeUrl(path));
         return runRequest(request, body, params);
@@ -151,7 +151,7 @@ public class AuthenticatedRestClient implements RestClient {
     @Override
     public String delete(List<String> path, Map<String, String> params) {
         if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "operation: {0} path: {1}", new Object[]{"DELETE", composeUrl(path)});
+            LOG.log(Level.FINER, "operation: {0} path: {1}", new Object[] { "DELETE", composeUrl(path) });
         }
         BoundRequestBuilder prepareDelete = client().prepareDelete(composeUrl(path));
         return runRequest(prepareDelete, null, params);
@@ -160,7 +160,7 @@ public class AuthenticatedRestClient implements RestClient {
     @Override
     public String postBinary(List<String> path, InputStream dataStream) {
         if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "operation: {0} path: {1}", new Object[]{"POST-binary", composeUrl(path)});
+            LOG.log(Level.FINER, "operation: {0} path: {1}", new Object[] { "POST-binary", composeUrl(path) });
         }
         BoundRequestBuilder preparePost = client().preparePost(composeUrl(path));
         preparePost.setBody(dataStream);
@@ -170,7 +170,7 @@ public class AuthenticatedRestClient implements RestClient {
     @Override
     public void putBinary(List<String> path, InputStream dataStream, Map<String, String> params) {
         if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "operation: {0} path: {1}", new Object[]{"POST-binary", composeUrl(path)});
+            LOG.log(Level.FINER, "operation: {0} path: {1}", new Object[] { "POST-binary", composeUrl(path) });
         }
         BoundRequestBuilder preparePut = client().preparePut(composeUrl(path));
         preparePut.setBody(dataStream);
@@ -224,7 +224,7 @@ public class AuthenticatedRestClient implements RestClient {
         if (REDIRECT_CODES.contains(response.getStatusCode())) {
             if (LOG.isLoggable(Level.FINEST)) {
                 LOG.log(Level.FINEST, "Found redirect with code={0} location={1}",
-                        new Object[]{response.getStatusCode(), response.getHeader("Location")});
+                        new Object[] { response.getStatusCode(), response.getHeader("Location") });
             }
             return (String) response.getHeader("Location");
         } else {
@@ -287,7 +287,7 @@ public class AuthenticatedRestClient implements RestClient {
     }
 
     private void runAsyncRequest(BoundRequestBuilder builder, Map<String, String> parameters,
-                                 final Listener<Map> listener, boolean retryToken) {
+            final Listener<Map> listener, boolean retryToken) {
         try {
             addDefaultHeaders(builder, parameters);
             addParameters(builder, parameters);
@@ -351,7 +351,7 @@ public class AuthenticatedRestClient implements RestClient {
     }
 
     private org.asynchttpclient.Response runBasicRequest(BoundRequestBuilder builder, String json,
-                                                         Map<String, String> parameters) {
+            Map<String, String> parameters) {
         try {
             addDefaultHeaders(builder, parameters);
             addParameters(builder, parameters);

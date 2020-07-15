@@ -38,6 +38,7 @@ public interface RestClient extends Closeable {
      *            full path for GET operation
      * @param params
      *            URL parameters
+     * 
      * @return returned body as String
      */
     String get(String path, Map<String, String> params);

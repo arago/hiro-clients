@@ -53,6 +53,7 @@ public class ClientBuilder {
      * if used the caller is responsible for proper initialization, e.g. setting timeouts and for proper close on client
      *
      * @param client
+     * 
      * @return
      */
     public ClientBuilder setClient(AsyncHttpClient client) {
@@ -100,12 +101,12 @@ public class ClientBuilder {
     }
 
     public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener,
-                                               Listener<String> logListener) {
+            Listener<String> logListener) {
         return makeWebSocketClient(type, urlParameters, dataListener, logListener, null);
     }
 
     public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener,
-                                               Listener<String> logListener, WebSocketListener handler) {
+            Listener<String> logListener, WebSocketListener handler) {
         if (client == null) {
             client = HttpClientHelper.newClient(trustAllCerts, this.timeout);
         }

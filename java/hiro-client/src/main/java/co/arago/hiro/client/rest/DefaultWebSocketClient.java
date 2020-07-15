@@ -64,7 +64,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         /**
          * Invoked when the {@link WebSocket} is open.
          *
-         * @param websocket the WebSocket
+         * @param websocket
+         *            the WebSocket
          */
         @Override
         public void onOpen(WebSocket websocket) {
@@ -87,9 +88,13 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         /**
          * Invoked when the {@link WebSocket} is closed.
          *
-         * @param websocket the WebSocket
-         * @param code      the status code
-         * @param reason    the reason message
+         * @param websocket
+         *            the WebSocket
+         * @param code
+         *            the status code
+         * @param reason
+         *            the reason message
+         * 
          * @see "http://tools.ietf.org/html/rfc6455#section-5.5.1"
          */
         @Override
@@ -117,7 +122,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         /**
          * Invoked when the {@link WebSocket} crashes.
          *
-         * @param t a {@link Throwable}
+         * @param t
+         *            a {@link Throwable}
          */
         @Override
         public void onError(Throwable t) {
@@ -173,8 +179,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider,
-                                  AsyncHttpClient client, Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
-                                  Listener<String> logListener, WebSocketListener handler, List<Map> eventFilterMessages)
+            AsyncHttpClient client, Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
+            Listener<String> logListener, WebSocketListener handler, List<Map> eventFilterMessages)
             throws InterruptedException, ExecutionException, URISyntaxException {
 
         if (debugLevel != null) {
@@ -215,8 +221,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         WebSocketUpgradeHandler.Builder upgradeHandlerBuilder = new WebSocketUpgradeHandler.Builder();
 
         WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
-                .addWebSocketListener(new DefaultWebSocketListener(reconnect))
-                .build();
+                .addWebSocketListener(new DefaultWebSocketListener(reconnect)).build();
 
         try {
             webSocketClient = client.prepareGet(composeWsUrl(restApiUrl))
@@ -461,20 +466,20 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 sb.append("/");
 
                 switch (type) {
-                    case Event:
-                        sb.append("events-ws/" + DEFAULT_API_VERSION);
-                        break;
+                case Event:
+                    sb.append("events-ws/" + DEFAULT_API_VERSION);
+                    break;
 
-                    case Graph:
-                        sb.append("graph-ws/" + DEFAULT_API_VERSION);
-                        break;
+                case Graph:
+                    sb.append("graph-ws/" + DEFAULT_API_VERSION);
+                    break;
 
-                    case Action:
-                        sb.append("action-ws/" + ACTION_API_VERSION);
-                        break;
+                case Action:
+                    sb.append("action-ws/" + ACTION_API_VERSION);
+                    break;
 
-                    default:
-                        throw new IllegalArgumentException("unknown type " + type);
+                default:
+                    throw new IllegalArgumentException("unknown type " + type);
                 }
 
                 if (urlParameters != null && !urlParameters.isEmpty()) {
@@ -497,17 +502,17 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
     private String getProtocol() {
         switch (type) {
-            case Event:
-                return "events-1.0.0";
+        case Event:
+            return "events-1.0.0";
 
-            case Graph:
-                return "graph-2.0.0";
+        case Graph:
+            return "graph-2.0.0";
 
-            case Action:
-                return "action-1.0.0";
+        case Action:
+            return "action-1.0.0";
 
-            default:
-                throw new IllegalArgumentException("unknown type " + type);
+        default:
+            throw new IllegalArgumentException("unknown type " + type);
         }
     }
 
