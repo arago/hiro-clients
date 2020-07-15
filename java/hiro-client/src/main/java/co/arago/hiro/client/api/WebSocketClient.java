@@ -15,4 +15,8 @@ public interface WebSocketClient extends Closeable {
     long sendMessage(String type, Map<String, String> headers, Map body);
 
     void sendMessage(String message);
+
+    void addEventFilter(Map filter);
+    void removeEventFilter(String id);
+    void clearEventFilters();
 }
