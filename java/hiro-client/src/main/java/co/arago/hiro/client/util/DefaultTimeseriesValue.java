@@ -6,10 +6,12 @@
 package co.arago.hiro.client.util;
 
 import co.arago.hiro.client.api.TimeseriesValue;
-import java.util.Map;
 import net.minidev.json.JSONObject;
 
-import static co.arago.hiro.client.api.HiroClient.*;
+import java.util.Map;
+
+import static co.arago.hiro.client.api.HiroClient.JSON_TS_TIMESTAMP;
+import static co.arago.hiro.client.api.HiroClient.JSON_TS_VALUE;
 
 /**
  *

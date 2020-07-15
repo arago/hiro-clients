@@ -1,8 +1,9 @@
 package co.arago.hiro.client.util;
 
 import co.arago.hiro.client.api.LogValue;
-import java.util.Map;
 import net.minidev.json.JSONObject;
+
+import java.util.Map;
 
 public class DefaultLogValue implements LogValue {
 

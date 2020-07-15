@@ -1,15 +1,11 @@
 package co.arago.hiro.client.util;
 
+import org.asynchttpclient.*;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.asynchttpclient.Param;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.Response;
 
 /**
  *

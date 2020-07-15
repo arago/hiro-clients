@@ -1,10 +1,11 @@
 package co.arago.hiro.client.auth;
 
 import co.arago.hiro.client.api.TokenProvider;
+import org.asynchttpclient.Response;
+
 import java.io.IOException;
 
 import static co.arago.hiro.client.util.Helper.notEmpty;
-import org.asynchttpclient.Response;
 
 /**
  *

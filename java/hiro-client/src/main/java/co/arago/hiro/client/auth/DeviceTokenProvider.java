@@ -1,10 +1,11 @@
 package co.arago.hiro.client.auth;
 
-import java.util.Map;
-import java.util.logging.Level;
 import org.asynchttpclient.AsyncHttpClient;
 
-import static co.arago.hiro.client.util.Helper.*;
+import java.util.Map;
+import java.util.logging.Level;
+
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *

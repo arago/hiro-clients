@@ -6,10 +6,10 @@ import co.arago.hiro.client.auth.FixedTokenProvider;
 import co.arago.hiro.client.auth.PasswordTokenProvider;
 import org.asynchttpclient.AsyncHttpClient;
 
-import static co.arago.hiro.client.util.Helper.notEmpty;
 import java.util.logging.Level;
 
 import static co.arago.hiro.client.auth.AbstractTokenProvider.DEFAULT_API_VERSION;
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *

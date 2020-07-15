@@ -1,10 +1,11 @@
 package co.arago.hiro.client.util;
 
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import net.minidev.json.JSONValue;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleWsListener implements WebSocketListener {
     private final String filter;

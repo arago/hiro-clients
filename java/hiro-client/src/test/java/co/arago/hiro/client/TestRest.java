@@ -5,16 +5,13 @@
 */
 package co.arago.hiro.client;
 
-import co.arago.hiro.client.builder.ClientBuilder;
-import co.arago.hiro.client.builder.TokenBuilder;
 import co.arago.hiro.client.api.RestClient;
 import co.arago.hiro.client.api.TokenProvider;
+import co.arago.hiro.client.builder.ClientBuilder;
+import co.arago.hiro.client.builder.TokenBuilder;
+import org.junit.*;
+
 import java.io.IOException;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /**
  *

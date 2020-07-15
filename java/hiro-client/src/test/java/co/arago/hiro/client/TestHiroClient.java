@@ -10,25 +10,13 @@ import co.arago.hiro.client.api.TimeseriesValue;
 import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.builder.ClientBuilder;
 import co.arago.hiro.client.builder.TokenBuilder;
-import co.arago.hiro.client.util.DefaultTimeseriesValue;
-import co.arago.hiro.client.util.Helper;
-import co.arago.hiro.client.util.HiroCollections;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.Listener;
+import co.arago.hiro.client.util.*;
+import org.junit.*;
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import static org.junit.Assert.*;
 

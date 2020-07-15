@@ -1,10 +1,12 @@
 package co.arago.hiro.client.auth.legacy;
 
-import java.util.logging.Level;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
-import static co.arago.hiro.client.util.Helper.notEmpty;
 import org.asynchttpclient.Response;
+
+import java.util.logging.Level;
+
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *

@@ -1,7 +1,8 @@
 package co.arago.hiro.client.api;
 
-import java.io.Closeable;
 import org.asynchttpclient.Response;
+
+import java.io.Closeable;
 
 /**
  *

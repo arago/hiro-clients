@@ -6,6 +6,12 @@ import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Throwables;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.Response;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
@@ -13,13 +19,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.Response;
 
-import static co.arago.hiro.client.util.Helper.*;
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *

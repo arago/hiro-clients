@@ -1,18 +1,12 @@
 package co.arago.hiro.client.rest;
 
-import co.arago.hiro.client.api.HiroClient;
-import co.arago.hiro.client.api.LogValue;
-import co.arago.hiro.client.api.TimeseriesValue;
-import co.arago.hiro.client.api.TokenProvider;
-import co.arago.hiro.client.api.WebSocketClient;
+import co.arago.hiro.client.api.*;
 import co.arago.hiro.client.builder.ClientBuilder;
-import co.arago.hiro.client.util.DefaultLogValue;
-import co.arago.hiro.client.util.DefaultTimeseriesValue;
-import co.arago.hiro.client.util.Helper;
-import co.arago.hiro.client.util.HiroCollections;
-import co.arago.hiro.client.util.Listener;
-import co.arago.hiro.client.util.SimpleWsListener;
-import co.arago.hiro.client.util.Throwables;
+import co.arago.hiro.client.util.*;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Response;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,18 +14,14 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
 
-import static co.arago.hiro.client.util.Helper.*;
-import static co.arago.hiro.client.api.RestClient.*;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.HttpClientHelper;
-import java.util.concurrent.ExecutionException;
-import org.asynchttpclient.Response;
+import static co.arago.hiro.client.api.RestClient.DEFAULT_ENCODING;
+import static co.arago.hiro.client.api.RestClient.HEADER_CONTENT_TYPE;
+import static co.arago.hiro.client.util.Helper.notEmpty;
+import static co.arago.hiro.client.util.Helper.notNull;
 
 public class DefaultHiroClient implements HiroClient {
 

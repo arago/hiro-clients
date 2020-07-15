@@ -5,11 +5,12 @@
  */
 package co.arago.hiro.client.util;
 
+import net.minidev.json.JSONValue;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.minidev.json.JSONValue;
 
 import static co.arago.hiro.client.api.HiroClient.*;
 

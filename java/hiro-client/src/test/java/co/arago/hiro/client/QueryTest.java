@@ -7,12 +7,13 @@ package co.arago.hiro.client;
 
 import co.arago.hiro.client.api.HiroClient;
 import co.arago.hiro.client.util.HiroCollections;
-import java.util.HashMap;
-import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 

@@ -12,19 +12,16 @@ import co.arago.hiro.client.util.HiroException;
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.IStatus;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
 
 import static co.arago.hiro.client.rest.DefaultHiroClient.*;
 
