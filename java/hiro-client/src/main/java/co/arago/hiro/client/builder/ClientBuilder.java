@@ -10,11 +10,15 @@ import co.arago.hiro.client.rest.DefaultWebSocketClient;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.Throwables;
-import java.util.logging.Level;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ws.WebSocketListener;
 
-import static co.arago.hiro.client.util.Helper.*;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+
+import static co.arago.hiro.client.util.Helper.notEmpty;
+import static co.arago.hiro.client.util.Helper.notNull;
 
 public class ClientBuilder {
 
@@ -25,6 +29,7 @@ public class ClientBuilder {
     protected Level debugLevel = Level.OFF;
     protected int timeout = 0; // msecs
     protected String apiVersion = null; // enforce /api/<vers>/graph
+    protected List<Map> eventFilterMessages;
 
     public enum WebsocketType {
         Graph, Event, Action
@@ -42,9 +47,9 @@ public class ClientBuilder {
 
     /**
      * allows to set externally created AsyncHttpClient
-     *
+     * <p>
      * usually not required since a missing client will be created automatically.
-     *
+     * <p>
      * if used the caller is responsible for proper initialization, e.g. setting timeouts and for proper close on client
      *
      * @param client
@@ -72,7 +77,11 @@ public class ClientBuilder {
 
     public ClientBuilder setApiVersion(String version) {
         this.apiVersion = version;
+        return this;
+    }
 
+    public ClientBuilder setEventFilterMessages(List<Map> eventFilterMessages) {
+        this.eventFilterMessages = eventFilterMessages;
         return this;
     }
 
@@ -91,19 +100,19 @@ public class ClientBuilder {
     }
 
     public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener,
-            Listener<String> loglistener) {
-        return makeWebSocketClient(type, urlParameters, dataListener, loglistener, null);
+                                               Listener<String> logListener) {
+        return makeWebSocketClient(type, urlParameters, dataListener, logListener, null);
     }
 
     public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener,
-            Listener<String> loglistener, WebSocketListener handler) {
+                                               Listener<String> logListener, WebSocketListener handler) {
         if (client == null) {
             client = HttpClientHelper.newClient(trustAllCerts, this.timeout);
         }
 
         try {
             return new DefaultWebSocketClient(restApiUrl, urlParameters, tokenProvider, client, debugLevel, timeout,
-                    type, dataListener, loglistener, handler);
+                    type, dataListener, logListener, handler, eventFilterMessages);
         } catch (Throwable ex) {
             return Throwables.unchecked(ex);
         }
