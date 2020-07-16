@@ -3,13 +3,13 @@ package co.arago.hiro.client.rest;
 import co.arago.hiro.client.api.RestClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.auth.FixedTokenProvider;
-import co.arago.hiro.client.util.HiroCollections;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.HttpClientHelper;
-import co.arago.hiro.client.util.Listener;
-import co.arago.hiro.client.util.Throwables;
+import co.arago.hiro.client.util.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpHeaders;
+import net.minidev.json.JSONValue;
+import org.asynchttpclient.*;
+import org.jsfr.json.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -20,22 +20,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Response;
-import org.jsfr.json.JsonPathListener;
-import org.jsfr.json.JsonSurferJackson;
-import org.jsfr.json.NonBlockingParser;
-import org.jsfr.json.ParsingContext;
-import org.jsfr.json.SurfingConfiguration;
 
-import static co.arago.hiro.client.api.RestClient.*;
-import static co.arago.hiro.client.util.Helper.*;
+import static co.arago.hiro.client.util.Helper.notEmpty;
+import static co.arago.hiro.client.util.Helper.notNull;
 
 public class AuthenticatedRestClient implements RestClient {
 
@@ -266,27 +253,36 @@ public class AuthenticatedRestClient implements RestClient {
     }
 
     private String runRequest(BoundRequestBuilder builder, String json, Map<String, String> parameters) {
-        int tries = 0;
-        boolean retryToken = true;
-        while (true) {
-            ++tries;
-            try {
-                final Response resp = runBasicRequest(builder, json, parameters);
-                return resp.getResponseBody(DEFAULT_ENCODING);
-            } catch (HiroException ex) {
-                if (tokenProvider.checkTokenRenewal(ex.getCode()) && retryToken) {
-                    retryToken = false;
-                    tokenProvider.renewToken();
-                    continue;
-                } else if (shouldRetry(ex.getCode(), tries)) {
-                    backoff(tries);
-                    continue;
-                }
+        try {
+            final Response resp = runBasicRequest(builder, json, parameters);
+            return resp.getResponseBody(DEFAULT_ENCODING);
 
+        } catch (HiroException ex) {
+            int tries = 0;
+
+            if (tokenProvider.checkTokenRenewal(ex.getCode())) {
+                tokenProvider.renewToken();
+                addToken(builder);
+            } else if (!shouldRetry(ex.getCode(), tries)) {
                 throw (ex);
-            } catch (Throwable t) {
-                return Throwables.unchecked(t);
             }
+
+            while (true) {
+                ++tries;
+                try {
+                    final Response resp = executeBasicRequest(builder);
+                    return resp.getResponseBody(DEFAULT_ENCODING);
+                } catch (HiroException ex1) {
+                    if (shouldRetry(ex1.getCode(), tries)) {
+                        backoff(tries);
+                        continue;
+                    }
+
+                    throw (ex1);
+                }
+            }
+        } catch (Throwable t) {
+            return Throwables.unchecked(t);
         }
     }
 
@@ -361,6 +357,14 @@ public class AuthenticatedRestClient implements RestClient {
             addParameters(builder, parameters);
             addBody(builder, json);
 
+            return executeBasicRequest(builder);
+        } catch (Throwable t) {
+            return Throwables.unchecked(t);
+        }
+    }
+
+    private org.asynchttpclient.Response executeBasicRequest(BoundRequestBuilder builder) {
+        try {
             HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
 
             // having a timeout is good practice, even if it is one week

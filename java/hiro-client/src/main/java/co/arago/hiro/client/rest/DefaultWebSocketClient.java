@@ -3,28 +3,26 @@ package co.arago.hiro.client.rest;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.builder.ClientBuilder.WebsocketType;
-import co.arago.hiro.client.util.Helper;
-import co.arago.hiro.client.util.HiroCollections;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.Listener;
-import co.arago.hiro.client.util.Throwables;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import co.arago.hiro.client.util.*;
 import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class DefaultWebSocketClient implements WebSocketClient {
     private static final long PING_TIMEOUT = 30 * 1000;
@@ -40,18 +38,153 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     private int retries = 0;
     private final AtomicLong idCounter = new AtomicLong();
     private final String restApiUrl;
-    private final Listener<String> loglistener;
+    private final Listener<String> logListener;
     private final Listener<String> dataListener;
-    private final AsyncHttpClient client;
+    private AsyncHttpClient client;
     private final TokenProvider tokenProvider;
     private final int timeout;
     private final WebsocketType type;
     private final String urlParameters;
     private final WebSocketListener handler;
 
+    private final Map<String, Map> eventFilterMessages = new ConcurrentHashMap<>();
+
+    /**
+     * This implementation ensures that {@link #reconnect()} is not triggered while the websocket is currently
+     * reconnection to avoid recursive calls of the method.
+     */
+    private class DefaultWebSocketListener implements WebSocketListener {
+
+        /**
+         * Flag to prevent recursive calls to {@link #reconnect()}. Gets set to false when the connection opens.
+         */
+        private boolean isReconnecting;
+
+        public DefaultWebSocketListener(boolean isReconnecting) {
+            this.isReconnecting = isReconnecting;
+        }
+
+        /**
+         * Invoked when the {@link WebSocket} is open.<br/>
+         * Sets {@link #isReconnecting} to 'false' because the websocket is now connected again.
+         *
+         * @param websocket
+         *            the WebSocket
+         */
+        @Override
+        public void onOpen(WebSocket websocket) {
+            final Map m = HiroCollections.newMap();
+            m.put("type", "open");
+            m.put("open", websocket.isOpen());
+
+            if (LOG.isLoggable(Level.FINEST)) {
+                LOG.log(Level.FINEST, "connected " + this);
+            }
+
+            if (handler != null) {
+                handler.onOpen(websocket);
+            }
+
+            process(logListener, JSONValue.toJSONString(m));
+            isReconnecting = false;
+        }
+
+        /**
+         * Invoked when the {@link WebSocket} is closed.
+         *
+         * @param websocket
+         *            the WebSocket
+         * @param code
+         *            the status code
+         * @param reason
+         *            the reason message
+         * 
+         * @see "http://tools.ietf.org/html/rfc6455#section-5.5.1"
+         */
+        @Override
+        public void onClose(WebSocket websocket, int code, String reason) {
+            final Map m = HiroCollections.newMap();
+            m.put("type", "close");
+            m.put("code", code);
+            m.put("reason", reason);
+
+            if (LOG.isLoggable(Level.FINEST)) {
+                LOG.log(Level.FINEST, "received close " + this);
+            }
+
+            if (handler != null) {
+                handler.onClose(websocket, code, reason);
+            }
+
+            process(logListener, JSONValue.toJSONString(m));
+
+            if (!isReconnecting)
+                reconnect();
+
+        }
+
+        /**
+         * Invoked when the {@link WebSocket} crashes.
+         *
+         * @param t
+         *            a {@link Throwable}
+         */
+        @Override
+        public void onError(Throwable t) {
+            final Map m = HiroCollections.newMap();
+            m.put("type", "error");
+            m.put("message", t.getMessage());
+            m.put("stack", stacktrace(t));
+
+            if (LOG.isLoggable(Level.FINEST)) {
+                LOG.log(Level.FINEST, "received error " + this, t);
+            }
+
+            if (handler != null) {
+                handler.onError(t);
+            }
+
+            process(logListener, JSONValue.toJSONString(m));
+
+            if (!isReconnecting)
+                reconnect();
+
+        }
+
+        @Override
+        public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+            if (LOG.isLoggable(Level.FINEST)) {
+                LOG.log(Level.FINEST, "received message " + payload);
+            }
+
+            if (handler != null) {
+                handler.onTextFrame(payload, finalFragment, rsv);
+            }
+
+            Object o = JSONValue.parse(payload);
+            if (o instanceof Map && ((Map) o).containsKey("error")) {
+                Map error = (Map) ((Map) o).get("error");
+                if ((int) error.get("code") == 401) {
+                    tokenProvider.renewToken();
+                    reconnect();
+                    return;
+                }
+            }
+
+            process(dataListener, payload);
+        }
+
+        @Override
+        public void onPingFrame(byte[] payload) {
+            if (webSocketClient != null && webSocketClient.isOpen()) {
+                webSocketClient.sendPongFrame(payload);
+            }
+        }
+    }
+
     public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider,
             AsyncHttpClient client, Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
-            Listener<String> loglistener, WebSocketListener handler)
+            Listener<String> logListener, WebSocketListener handler, List<Map> eventFilterMessages)
             throws InterruptedException, ExecutionException, URISyntaxException {
 
         if (debugLevel != null) {
@@ -61,34 +194,28 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         this.restApiUrl = restApiUrl;
         this.tokenProvider = tokenProvider;
         this.timeout = timeout <= 0 ? 5000 : timeout;
-        this.loglistener = loglistener;
+        this.logListener = logListener;
         this.dataListener = dataListener;
         this.client = client;
         this.type = type;
         this.urlParameters = urlParameters;
         this.handler = handler;
 
-        connect(false, true);
+        for (Map filter : eventFilterMessages) {
+            this.eventFilterMessages.put(getFilterId(filter), filter);
+        }
+
+        connect(false);
 
         executor.scheduleWithFixedDelay(() -> ping(), PING_TIMEOUT, PING_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
-    private void connect(boolean waitForIt, boolean initial) {
+    /**
+     * Setup the websocket and connect.
+     */
+    private void connect(boolean isReconnecting) {
         if (!running) {
             return;
-        }
-
-        if (!initial) {
-            closeWs();
-        }
-
-        if (waitForIt) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                closeWs();
-                Throwables.unchecked(ex);
-            }
         }
 
         if (LOG.isLoggable(Level.FINEST)) {
@@ -97,110 +224,26 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         WebSocketUpgradeHandler.Builder upgradeHandlerBuilder = new WebSocketUpgradeHandler.Builder();
 
-        WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder.addWebSocketListener(new WebSocketListener() {
-            @Override
-            public void onOpen(WebSocket websocket) {
-                final Map m = HiroCollections.newMap();
-                m.put("type", "open");
-                m.put("open", websocket.isOpen());
-
-                if (LOG.isLoggable(Level.FINEST)) {
-                    LOG.log(Level.FINEST, "connected " + this);
-                }
-
-                if (handler != null) {
-                    handler.onOpen(websocket);
-                }
-
-                process(loglistener, JSONValue.toJSONString(m));
-            }
-
-            @Override
-            public void onClose(WebSocket websocket, int code, String reason) {
-                final Map m = HiroCollections.newMap();
-                m.put("type", "close");
-                m.put("code", code);
-                m.put("reason", reason);
-
-                if (LOG.isLoggable(Level.FINEST)) {
-                    LOG.log(Level.FINEST, "received close " + this);
-                }
-
-                if (handler != null) {
-                    handler.onClose(websocket, code, reason);
-                }
-
-                process(loglistener, JSONValue.toJSONString(m));
-
-                if (running && !initial) {
-                    connect(false, initial);
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                final Map m = HiroCollections.newMap();
-                m.put("type", "error");
-                m.put("message", t.getMessage());
-                m.put("stack", stacktrace(t));
-
-                if (LOG.isLoggable(Level.FINEST)) {
-                    LOG.log(Level.FINEST, "received error " + this, t);
-                }
-
-                if (handler != null) {
-                    handler.onError(t);
-                }
-
-                process(loglistener, JSONValue.toJSONString(m));
-
-                if (WebsocketType.Event == type) {
-                    close();
-                    throw new HiroException("connection closed", 400);
-                }
-
-                if (running && !initial) {
-                    connect(false, initial);
-                }
-            }
-
-            @Override
-            public void onTextFrame(String payload, boolean finalFragment, int rsv) {
-                if (LOG.isLoggable(Level.FINEST)) {
-                    LOG.log(Level.FINEST, "received message " + payload);
-                }
-
-                if (handler != null) {
-                    handler.onTextFrame(payload, finalFragment, rsv);
-                }
-
-                Object o = JSONValue.parse(payload);
-                if (o instanceof Map && ((Map) o).containsKey("error")) {
-                    Map error = (Map) ((Map) o).get("error");
-                    if ((int) error.get("code") == 401) {
-                        tokenProvider.renewToken();
-                        connect(false, false);
-                        return;
-                    } else if (WebsocketType.Event == type) {
-                        throw new HiroException((String) error.get("message"), (int) error.get("code"));
-                    }
-                }
-
-                process(dataListener, payload);
-            }
-
-            @Override
-            public void onPingFrame(byte[] payload) {
-                if (webSocketClient != null && webSocketClient.isOpen()) {
-                    webSocketClient.sendPongFrame(payload);
-                }
-            }
-        }).build();
+        WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
+                .addWebSocketListener(new DefaultWebSocketListener(isReconnecting)).build();
 
         try {
             webSocketClient = client.prepareGet(composeWsUrl(restApiUrl))
                     .addHeader("Sec-WebSocket-Protocol", getProtocol() + ", token-" + tokenProvider.getToken())
                     .setRequestTimeout(timeout).execute(wsHandler).get(timeout, TimeUnit.MILLISECONDS);
+
+            if (webSocketClient == null) {
+                throw new HiroException("Failed to initialize WebSocketClient. It is null.", 500);
+            }
+
+            if (type == WebsocketType.Event) {
+                for (Map filter : eventFilterMessages.values()) {
+                    String message = getEventRegisterMessage(filter);
+                    LOG.log(Level.INFO, "Send filter: " + message);
+                    webSocketClient.sendTextFrame(message).get(timeout, TimeUnit.MILLISECONDS);
+                }
+            }
+
         } catch (Throwable ex) {
             closeWs();
 
@@ -208,12 +251,63 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 LOG.log(Level.FINEST, "connection failed " + this, ex);
             }
 
-            throw new HiroException("connection failed " + this + " " + ex.getMessage() + " " + stacktrace(ex), 400,
-                    ex);
+            throw new HiroException("connection failed " + this + " " + ex.getMessage(), 400, ex);
         }
 
         if (LOG.isLoggable(Level.FINEST)) {
             LOG.log(Level.FINEST, "connection opened " + this);
+        }
+    }
+
+    /**
+     * Reconnect a connection that should not have been closed. This also implements a delay strategy for repeated
+     * attempts to reconnect as suggested per RFC6455. Reconnect attempts only stop on {@link #close()} or an
+     * InterruptedException while sleeping.
+     */
+    private synchronized void reconnect() {
+        Duration nextTryDelay = Duration.ZERO;
+
+        closeWs();
+
+        while (true) {
+            try {
+                if (!running) {
+                    return;
+                }
+
+                long delay = nextTryDelay.getSeconds() * 1000;
+                Thread.sleep(delay);
+
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.log(Level.INFO, "Reconnecting " + this);
+                }
+
+                connect(true);
+
+                return;
+            } catch (HiroException ex) {
+
+                LOG.log(Level.SEVERE, "Reconnect caught exception.", ex);
+
+                // Retry strategy
+                if (nextTryDelay.getSeconds() < 3) {
+                    nextTryDelay = nextTryDelay.plusSeconds(1);
+                } else if (nextTryDelay.getSeconds() < 60) {
+                    nextTryDelay = nextTryDelay.plusSeconds(new Random().nextInt(10) + 1);
+                } else {
+                    nextTryDelay = Duration.ofMinutes(new Random().nextInt(10) + 1);
+                }
+
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.log(Level.INFO, "Retrying connection after " + nextTryDelay.getSeconds() + "s.");
+                }
+
+            } catch (InterruptedException ex) {
+                closeWs();
+                if (LOG.isLoggable(Level.FINEST)) {
+                    LOG.log(Level.FINEST, "Reconnect interrupted " + this);
+                }
+            }
         }
     }
 
@@ -232,7 +326,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         }
 
         if (webSocketClient == null || !webSocketClient.isOpen()) {
-            connect(false, false);
+            reconnect();
         }
 
         if (LOG.isLoggable(Level.FINEST)) {
@@ -247,7 +341,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 LOG.log(Level.WARNING, "send failed, retrying", ex);
 
                 ++retries;
-                connect(true, false);
+                reconnect();
 
                 sendMessage(message);
             } else {
@@ -255,6 +349,62 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 Throwables.unchecked(ex);
             }
         }
+    }
+
+    @Override
+    public synchronized void addEventFilter(Map filter) {
+        String id = getFilterId(filter);
+        String message = getEventRegisterMessage(filter);
+        LOG.log(Level.INFO, "Add filter: " + message);
+        sendMessage(message);
+        eventFilterMessages.put(id, filter);
+    }
+
+    private String getFilterId(Map filter) {
+        String id = (String) filter.get("filter-id");
+        if (StringUtils.isEmpty(id)) {
+            throw new HiroException("Wrong filter specification. Key 'filter-id' is missing.", 400);
+        }
+        return id;
+    }
+
+    private String getEventRegisterMessage(Map filter) {
+        final Map m = HiroCollections.newMap();
+        m.put("type", "register");
+        m.put("args", filter);
+
+        String message = JSONValue.toJSONString(m);
+
+        return message;
+    }
+
+    @Override
+    public synchronized void removeEventFilter(String id) {
+        final Map m = HiroCollections.newMap();
+        m.put("type", "unregister");
+        m.put("args", HiroCollections.newMap("filter-id", id));
+
+        String message = JSONValue.toJSONString(m);
+
+        LOG.log(Level.INFO, "Remove filter: " + message);
+
+        sendMessage(message);
+        eventFilterMessages.remove(id);
+    }
+
+    @Override
+    public synchronized void clearEventFilters() {
+        final Map m = HiroCollections.newMap();
+        m.put("type", "clear");
+        m.put("args", HiroCollections.newMap());
+
+        String message = JSONValue.toJSONString(m);
+
+        LOG.log(Level.INFO, "Clear filter: " + message);
+
+        sendMessage(message);
+
+        eventFilterMessages.clear();
     }
 
     @Override
@@ -380,7 +530,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 m.put("message", "ping failed " + t.getMessage());
                 m.put("stack", stacktrace(t));
 
-                process(loglistener, JSONValue.toJSONString(m));
+                process(logListener, JSONValue.toJSONString(m));
             }
         }
     }

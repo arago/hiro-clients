@@ -15,6 +15,7 @@ public interface TokenProvider extends Token, Closeable {
      * check the response, if 401 then renewToken() will be called
      * 
      * @param response
+     * 
      * @return true if the token needed to be renewed
      */
     boolean checkTokenRenewal(Response response);

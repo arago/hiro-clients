@@ -17,6 +17,7 @@ public interface Listener<T> {
      * process a streaming entry
      *
      * @param entry
+     * 
      * @return status of listener after processing entry
      */
     ListenerState process(T entry);
