@@ -276,7 +276,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 }
 
                 long delay = nextTryDelay.getSeconds() * 1000;
-                Thread.sleep(delay);
+                if (delay > 0)
+                    wait(delay);
 
                 if (LOG.isLoggable(Level.INFO)) {
                     LOG.log(Level.INFO, "Reconnecting " + this);
@@ -426,6 +427,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     public synchronized void close() {
         running = false;
 
+        notifyAll();
         closeWs();
 
         executor.shutdownNow();
