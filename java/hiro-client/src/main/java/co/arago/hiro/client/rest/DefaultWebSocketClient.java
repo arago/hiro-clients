@@ -361,7 +361,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     private String getFilterId(Map filter) {
-        String id = String.valueOf(filter.get("filter-id"));
+        String id = (String) filter.get("filter-id");
         if (StringUtils.isEmpty(id)) {
             throw new HiroException("Wrong filter specification. Key 'filter-id' is missing.", 400);
         }
