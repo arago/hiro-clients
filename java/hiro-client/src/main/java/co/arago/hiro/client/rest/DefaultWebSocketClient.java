@@ -16,14 +16,10 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,18 +47,26 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     private final String urlParameters;
     private final WebSocketListener handler;
 
-    private final Map<String, Map> eventFilterMessages = new LinkedHashMap<>();
+    private final Map<String, Map> eventFilterMessages = new ConcurrentHashMap<>();
 
+    /**
+     * This implementation ensures that {@link #reconnect()} is not triggered while the websocket is currently
+     * reconnection to avoid recursive calls of the method.
+     */
     private class DefaultWebSocketListener implements WebSocketListener {
 
-        private boolean reconnect;
+        /**
+         * Flag to prevent recursive calls to {@link #reconnect()}. Gets set to false when the connection opens.
+         */
+        private boolean isReconnecting;
 
-        public DefaultWebSocketListener(boolean reconnect) {
-            this.reconnect = reconnect;
+        public DefaultWebSocketListener(boolean isReconnecting) {
+            this.isReconnecting = isReconnecting;
         }
 
         /**
-         * Invoked when the {@link WebSocket} is open.
+         * Invoked when the {@link WebSocket} is open.<br/>
+         * Sets {@link #isReconnecting} to 'false' because the websocket is now connected again.
          *
          * @param websocket
          *            the WebSocket
@@ -82,7 +86,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             }
 
             process(logListener, JSONValue.toJSONString(m));
-            reconnect = false;
+            isReconnecting = false;
         }
 
         /**
@@ -114,7 +118,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
             process(logListener, JSONValue.toJSONString(m));
 
-            if (!reconnect)
+            if (!isReconnecting)
                 reconnect();
 
         }
@@ -142,7 +146,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
             process(logListener, JSONValue.toJSONString(m));
 
-            if (!reconnect)
+            if (!isReconnecting)
                 reconnect();
 
         }
@@ -209,7 +213,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     /**
      * Setup the websocket and connect.
      */
-    private void connect(boolean reconnect) {
+    private void connect(boolean isReconnecting) {
         if (!running) {
             return;
         }
@@ -221,7 +225,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         WebSocketUpgradeHandler.Builder upgradeHandlerBuilder = new WebSocketUpgradeHandler.Builder();
 
         WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
-                .addWebSocketListener(new DefaultWebSocketListener(reconnect)).build();
+                .addWebSocketListener(new DefaultWebSocketListener(isReconnecting)).build();
 
         try {
             webSocketClient = client.prepareGet(composeWsUrl(restApiUrl))
@@ -358,7 +362,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
     private String getFilterId(Map filter) {
         String id = String.valueOf(filter.get("filter-id"));
-        if (id == null || StringUtils.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             throw new HiroException("Wrong filter specification. Key 'filter-id' is missing.", 400);
         }
         return id;
