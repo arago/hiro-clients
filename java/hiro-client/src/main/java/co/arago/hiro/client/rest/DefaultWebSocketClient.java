@@ -222,9 +222,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             LOG.log(Level.FINEST, "connecting " + this);
         }
 
-        WebSocketUpgradeHandler.Builder upgradeHandlerBuilder = new WebSocketUpgradeHandler.Builder();
-
-        WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
+        WebSocketUpgradeHandler wsHandler = new WebSocketUpgradeHandler.Builder()
                 .addWebSocketListener(new DefaultWebSocketListener(isReconnecting)).build();
 
         try {
