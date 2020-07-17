@@ -265,19 +265,23 @@ public final class DefaultWebSocketClient implements WebSocketClient {
      * InterruptedException while sleeping.
      */
     private synchronized void reconnect() {
+        if (!running) {
+            return;
+        }
+
         Duration nextTryDelay = Duration.ZERO;
 
         closeWs();
 
         while (true) {
             try {
-                if (!running) {
-                    return;
-                }
-
                 long delay = nextTryDelay.getSeconds() * 1000;
                 if (delay > 0)
                     wait(delay);
+
+                if (!running) {
+                    return;
+                }
 
                 if (LOG.isLoggable(Level.INFO)) {
                     LOG.log(Level.INFO, "Reconnecting " + this);
