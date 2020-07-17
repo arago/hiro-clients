@@ -222,9 +222,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             LOG.log(Level.FINEST, "connecting " + this);
         }
 
-        WebSocketUpgradeHandler.Builder upgradeHandlerBuilder = new WebSocketUpgradeHandler.Builder();
-
-        WebSocketUpgradeHandler wsHandler = upgradeHandlerBuilder
+        WebSocketUpgradeHandler wsHandler = new WebSocketUpgradeHandler.Builder()
                 .addWebSocketListener(new DefaultWebSocketListener(isReconnecting)).build();
 
         try {
@@ -265,18 +263,23 @@ public final class DefaultWebSocketClient implements WebSocketClient {
      * InterruptedException while sleeping.
      */
     private synchronized void reconnect() {
+        if (!running) {
+            return;
+        }
+
         Duration nextTryDelay = Duration.ZERO;
 
         closeWs();
 
         while (true) {
             try {
+                long delay = nextTryDelay.getSeconds() * 1000;
+                if (delay > 0)
+                    wait(delay);
+
                 if (!running) {
                     return;
                 }
-
-                long delay = nextTryDelay.getSeconds() * 1000;
-                Thread.sleep(delay);
 
                 if (LOG.isLoggable(Level.INFO)) {
                     LOG.log(Level.INFO, "Reconnecting " + this);
@@ -426,6 +429,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     public synchronized void close() {
         running = false;
 
+        notifyAll();
         closeWs();
 
         executor.shutdownNow();
