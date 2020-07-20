@@ -29,37 +29,33 @@ import java.io.Serializable;
 /**
  * defines an abstract view of an access token
  *
- * implementations are supposed to hide the complexity of getting an access
- * token
+ * implementations are supposed to hide the complexity of getting an access token
  *
  *
  */
 public interface Token extends Serializable {
 
-  /**
-   * either returns a valid token or throws an exception
-   *
-   * the getToken method is supposed to hide any operations involved to actually
-   * get a valid access token.
-   *
-   * Hence calling getToken will automatically perform any necessary operations
-   * against the authorization services backing up a specific implementation of
-   * Token. This might include things like: - perform a token request against
-   * authorization server - automatically refresh a token got earlier if it
-   * becomes invalid
-   *
-   * @return a valid access token as string
-   */
-  String getToken();
+    /**
+     * either returns a valid token or throws an exception
+     *
+     * the getToken method is supposed to hide any operations involved to actually get a valid access token.
+     *
+     * Hence calling getToken will automatically perform any necessary operations against the authorization services
+     * backing up a specific implementation of Token. This might include things like: - perform a token request against
+     * authorization server - automatically refresh a token got earlier if it becomes invalid
+     *
+     * @return a valid access token as string
+     */
+    String getToken();
 
-  /**
-   * returns string representation of the token
-   *
-   * @return returns token as string
-   *
-   */
-  @Override
-  String toString();
+    /**
+     * returns string representation of the token
+     *
+     * @return returns token as string
+     *
+     */
+    @Override
+    String toString();
 }
 
-///@}
+/// @}

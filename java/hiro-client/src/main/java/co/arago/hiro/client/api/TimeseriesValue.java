@@ -5,7 +5,8 @@ import net.minidev.json.JSONAware;
 /**
  *
  */
-public interface TimeseriesValue extends JSONAware{
+public interface TimeseriesValue extends JSONAware {
     long getTimestamp();
+
     String getValue();
 }
