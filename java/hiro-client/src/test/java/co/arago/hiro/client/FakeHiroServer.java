@@ -37,7 +37,7 @@ public class FakeHiroServer extends NanoHTTPD {
             this.message = message;
             this.status = status;
         }
-        
+
         public IStatus getStatus() {
             return status;
         }
@@ -94,21 +94,21 @@ public class FakeHiroServer extends NanoHTTPD {
         String[] split = uri.split("/");
         if (split.length > 2) {
             if (split[1].equals(HiroClient.URL_PATH_QUERY)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_QUERY);
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_QUERY);
                 result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
             } else if (split[1].equals(HiroClient.URL_PATH_VARIABLES)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_VARIABLES);
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_VARIABLES);
                 result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
             } else {
                 // assume split[1] is a vertex
                 if (split[2].equals(HiroClient.URL_PATH_HISTORY)) {
-                    LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_HISTORY);
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_HISTORY);
                     result = getVertexHistory(split[1], session.getParms());
                 } else if (split[2].equals(HiroClient.URL_PATH_VALUES)) {
-                    LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_VALUES);
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_VALUES);
                     result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
                 } else if (split[2].equals(HiroClient.URL_PATH_ATTACHMENT)) {
-                    LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_ATTACHMENT);
+                    LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_ATTACHMENT);
                     result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
                 } else {
                     // assume neighbour query
@@ -118,13 +118,13 @@ public class FakeHiroServer extends NanoHTTPD {
             }
         } else {
             if (split[1].equals(HiroClient.URL_PATH_INFO)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_INFO);
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_INFO);
                 result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
             } else if (split[1].equals(HiroClient.URL_PATH_ME)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_ME);
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_ME);
                 result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
             } else if (split[1].equals(HiroClient.URL_PATH_EVENTS)) {
-                LOG.log(defaultLevel, "GET /"+HiroClient.URL_PATH_EVENTS);
+                LOG.log(defaultLevel, "GET /" + HiroClient.URL_PATH_EVENTS);
                 result = getEvents(session.getParms());
             } else {
                 // assume vertex
@@ -146,23 +146,23 @@ public class FakeHiroServer extends NanoHTTPD {
 
         if (split.length > 2) {
             if (split[1].equals(HiroClient.URL_PATH_CREATE)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_CREATE);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_CREATE);
                 String json = readBody(session.getInputStream());
                 result = doCreate(split[2], json);
             } else if (split[1].equals(HiroClient.URL_PATH_CONNECT)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_CONNECT);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_CONNECT);
                 result = doConnect(split[2], readBody(session.getInputStream()));
             } else if (split[1].equals(HiroClient.URL_PATH_QUERY)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_QUERY);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_QUERY);
                 result = new Result(Status.NOT_IMPLEMENTED, "NOT IMPLEMENTED, YET");
             } else if (split[2].equals(HiroClient.URL_PATH_VALUES)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_VALUES);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_VALUES);
                 result = uploadValues(split[1], readBody(session.getInputStream()));
             } else if (split[2].equals(HiroClient.URL_PATH_ATTACHMENT)) {
-                LOG.log(defaultLevel, "POST /"+HiroClient.URL_PATH_ATTACHMENT);
+                LOG.log(defaultLevel, "POST /" + HiroClient.URL_PATH_ATTACHMENT);
                 result = uploadContent(split[1], readBody(session.getInputStream()));
             } else {
-                result = new Result(Status.INTERNAL_ERROR, "Unknown operation for uri "+uri);
+                result = new Result(Status.INTERNAL_ERROR, "Unknown operation for uri " + uri);
             }
         } else {
             // assume vertex updata
@@ -181,11 +181,11 @@ public class FakeHiroServer extends NanoHTTPD {
         Result result;
 
         if (split[1].equals(HiroClient.URL_PATH_VARIABLES)) {
-            LOG.log(defaultLevel, "PUT /"+HiroClient.URL_PATH_VARIABLES);
+            LOG.log(defaultLevel, "PUT /" + HiroClient.URL_PATH_VARIABLES);
             result = setVariable(readBody(session.getInputStream()));
-      } else {
-        throw new IllegalArgumentException("unsupported PUT requested");
-      }
+        } else {
+            throw new IllegalArgumentException("unsupported PUT requested");
+        }
         Response r = newFixedLengthResponse(result.getMessage());
         r.setStatus(result.getStatus());
         return r;
@@ -222,7 +222,8 @@ public class FakeHiroServer extends NanoHTTPD {
     }
 
     private Result getEvents(Map<String, String> params) {
-        return new Result(Status.OK, "{\"items\":[{\"id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026310752627,\"timestamp\":1502437236523,\"body\":{\"ogit\\/_created-on\":1502437236523,\"\\/marsNodeID\":\"{\\\"ids\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/status\":\"FULFILLED\",\"ogit\\/_id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"\\/formular\":\"{\\\"title\\\":\\\"Get Hostname\\\",\\\"attributes\\\":{\\\"Get\\\":\\\"Hostname\\\"},\\\"nodeid\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"\\/issue-xmlns\":\"https:\\/\\/graphit.co\\/schemas\\/v2\\/IssueSchema\",\"ogit\\/_graphtype\":\"vertex\",\"ogit\\/_owner\":\"mglusiuk@arago.de\",\"ogit\\/_v\":1,\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by-app\":\"Frontend openautopilot\",\"ogit\\/_creator-app\":\"Frontend openautopilot\",\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_version\":\"2.19.0.114\",\"ogit\\/_type\":\"ogit\\/Task\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CREATE\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026341190402,\"timestamp\":1502437236558,\"body\":{\"ogit\\/_created-on\":1502437236558,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236558,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_created\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026344248254,\"timestamp\":1502437236569,\"body\":{\"ogit\\/_created-on\":1502437236569,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236569,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_owns\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"}]}");
+        return new Result(Status.OK,
+                "{\"items\":[{\"id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026310752627,\"timestamp\":1502437236523,\"body\":{\"ogit\\/_created-on\":1502437236523,\"\\/marsNodeID\":\"{\\\"ids\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/status\":\"FULFILLED\",\"ogit\\/_id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"\\/formular\":\"{\\\"title\\\":\\\"Get Hostname\\\",\\\"attributes\\\":{\\\"Get\\\":\\\"Hostname\\\"},\\\"nodeid\\\":[\\\"test3:test3:Machine:HIRO_AllInOne\\\"]}\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"\\/issue-xmlns\":\"https:\\/\\/graphit.co\\/schemas\\/v2\\/IssueSchema\",\"ogit\\/_graphtype\":\"vertex\",\"ogit\\/_owner\":\"mglusiuk@arago.de\",\"ogit\\/_v\":1,\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by-app\":\"Frontend openautopilot\",\"ogit\\/_creator-app\":\"Frontend openautopilot\",\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_version\":\"2.19.0.114\",\"ogit\\/_type\":\"ogit\\/Task\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CREATE\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026341190402,\"timestamp\":1502437236558,\"body\":{\"ogit\\/_created-on\":1502437236558,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236558,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_created$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_created\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"},{\"id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"nanotime\":1390026344248254,\"timestamp\":1502437236569,\"body\":{\"ogit\\/_created-on\":1502437236569,\"ogit\\/_out-id\":\"mglusiuk@arago.de\",\"ogit\\/_in-type\":\"ogit\\/Task\",\"ogit\\/_out-type\":\"ogit\\/Person\",\"ogit\\/_modified-on\":1502437236569,\"ogit\\/_in-id\":\"cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_creator\":\"mglusiuk@arago.de\",\"ogit\\/_graphtype\":\"edge\",\"ogit\\/_edge-id\":\"mglusiuk@arago.de$$ogit\\/_owns$$cj67kc74g07ihdr74p0c3sn6i\",\"ogit\\/_is-deleted\":false,\"ogit\\/_modified-by\":\"mglusiuk@arago.de\",\"ogit\\/_type\":\"ogit\\/_owns\"},\"identity\":\"mglusiuk@arago.de\",\"type\":\"CONNECT\"}]}");
     }
 
     private Result doCreate(String type, String json) {
@@ -243,12 +244,12 @@ public class FakeHiroServer extends NanoHTTPD {
     private Result doUpdate(String id, String json) {
         if (vertices.containsKey(id)) {
             Map m = Helper.parseJsonBody(vertices.get(id));
-          m.putAll(Helper.parseJsonBody(json));
-          for (Object key : m.keySet()) {
-            if (m.get(key) == null) {
-              m.remove(key);
+            m.putAll(Helper.parseJsonBody(json));
+            for (Object key : m.keySet()) {
+                if (m.get(key) == null) {
+                    m.remove(key);
+                }
             }
-          }
             m.put("ogit/_is-deleted", "false");
             m.put("ogit/_graphtype", "vertex");
             m.put("ogit/_id", id);
@@ -259,7 +260,7 @@ public class FakeHiroServer extends NanoHTTPD {
         }
     }
 
-  private Result doConnect(String edgeType, String json) {
+    private Result doConnect(String edgeType, String json) {
         Map m = Helper.parseJsonBody(json);
         String outId = (String) m.get("out");
         String inId = (String) m.get("in");
