@@ -1,13 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>co.arago</groupId>
-  <artifactId>hiro-client-all</artifactId>
-  <name>${project.artifactId}</name>
-  <packaging>pom</packaging>
-  <version>1.7.0</version>
+    <groupId>co.arago</groupId>
+    <artifactId>hiro-client-all</artifactId>
+    <name>${project.artifactId}</name>
+    <packaging>pom</packaging>
+    <version>1.7.1-SNAPSHOT</version>
 
-  <properties>
+    <properties>
         <maven.exec.skip>false</maven.exec.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -22,13 +24,13 @@
         <zookeeper-version>3.4.10</zookeeper-version>
         <javaee-web-api-version>7.0</javaee-web-api-version>
         <log4j-version>1.2.16</log4j-version>
-    <!-- override parent -->
+        <!-- override parent -->
         <hiro-client-version>${project.version}</hiro-client-version>
-    <!-- groovy stuff below -->
-    <commons-cli-version>1.4</commons-cli-version>
+        <!-- groovy stuff below -->
+        <commons-cli-version>1.4</commons-cli-version>
         <groovy-version>2.5.5</groovy-version>
-    <groovy-gpars-version>1.2.1</groovy-gpars-version>
-  </properties>
+        <groovy-gpars-version>1.2.1</groovy-gpars-version>
+    </properties>
 
 
     <dependencies>
@@ -40,23 +42,30 @@
         </dependency>
     </dependencies>
 
-  <modules>
-    <module>hiro-client</module>
-  </modules>
+    <modules>
+        <module>hiro-client</module>
+    </modules>
 
-  <build>
-    <plugins>
-      <plugin>
+    <build>
+        <plugins>
+            <plugin>
                 <groupId>net.revelc.code.formatter</groupId>
                 <artifactId>formatter-maven-plugin</artifactId>
                 <version>2.7.3</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <compilerSource>1.8</compilerSource>
                     <compilerCompliance>1.8</compilerCompliance>
                     <compilerTargetPlatform>1.8</compilerTargetPlatform>
                     <lineEnding>LF</lineEnding>
                     <encoding>UTF-8</encoding>
-                    <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>
+                    <!--                    <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>-->
                 </configuration>
             </plugin>
             <plugin>
@@ -92,15 +101,15 @@
                 </executions>
             </plugin>
             <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
+                <artifactId>maven-deploy-plugin</artifactId>
                 <version>2.8.2</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-ssh</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.wagon</groupId>
+                        <artifactId>wagon-ssh</artifactId>
                         <version>2.10</version>
-          </dependency>
-        </dependencies>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -127,34 +136,22 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>net.revelc.code.formatter</groupId>
-                <artifactId>formatter-maven-plugin</artifactId>
-                <version>2.12.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>format</goal>
-                        </goals>
-                    </execution>
-                </executions>
-      </plugin>
-    </plugins>
-  </build>
+        </plugins>
+    </build>
 
-  <distributionManagement>
-    <repository>
-      <id>arago-private</id>
-      <uniqueVersion>false</uniqueVersion>
-      <name>arago Repository</name>
-      <url>https://nexus.arago.co/repository/arago-private</url>
-    </repository>
-    <snapshotRepository>
-      <id>arago-private</id>
-      <uniqueVersion>false</uniqueVersion>
-      <name>arago Repository</name>
-      <url>https://nexus.arago.co/repository/arago-private</url>
-    </snapshotRepository>
-  </distributionManagement>
+    <distributionManagement>
+        <repository>
+            <id>arago-private</id>
+            <uniqueVersion>false</uniqueVersion>
+            <name>arago Repository</name>
+            <url>https://nexus.arago.co/repository/arago-private</url>
+        </repository>
+        <snapshotRepository>
+            <id>arago-private</id>
+            <uniqueVersion>false</uniqueVersion>
+            <name>arago Repository</name>
+            <url>https://nexus.arago.co/repository/arago-private</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 </project>
