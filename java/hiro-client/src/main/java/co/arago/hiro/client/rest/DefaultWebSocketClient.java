@@ -34,7 +34,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private volatile WebSocket webSocketClient;
-    private volatile boolean running = true;
+    private volatile boolean running = false;
     private int retries = 0;
     private final AtomicLong idCounter = new AtomicLong();
     private final String restApiUrl;
@@ -214,10 +214,6 @@ public final class DefaultWebSocketClient implements WebSocketClient {
      * Setup the websocket and connect.
      */
     private void connect(boolean isReconnecting) {
-        if (!running) {
-            return;
-        }
-
         if (LOG.isLoggable(Level.FINEST)) {
             LOG.log(Level.FINEST, "connecting " + this);
         }
@@ -242,6 +238,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 }
             }
 
+            running = true;
         } catch (Throwable ex) {
             closeWs();
 
