@@ -59,21 +59,25 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         /**
          * Flag to prevent recursive calls to {@link #reconnect()}. Gets set to false when the connection opens.
          */
-        private boolean isReconnecting;
+        private volatile boolean isReconnecting;
 
         /**
          * Setting this is the only way to avoid reconnecting an existing connection when a close event comes in. It
          * gets set when the token for the connection is unrecoverably invalid as per error message received in
          * {@link #onTextFrame(String, boolean, int)}.
          */
-        private boolean exitOnClose = false;
+        private volatile boolean exitOnClose = false;
 
         /**
          * This flag gets set when renewing a token throws an exception. The subsequent call to
          * {@link #onError(Throwable)} will then close the websocket.
          */
-        private boolean exitOnError = false;
+        private volatile boolean exitOnError = false;
 
+        /**
+         * Constructor
+         * @param isReconnecting Will be set inside {@link #connect(boolean)}.
+         */
         public DefaultWebSocketListener(boolean isReconnecting) {
             this.isReconnecting = isReconnecting;
         }
