@@ -35,6 +35,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private volatile WebSocket webSocketClient;
     private volatile boolean running = false;
+    private volatile boolean tokenValid = false;
     private int retries = 0;
     private final AtomicLong idCounter = new AtomicLong();
     private final String restApiUrl;
@@ -58,8 +59,27 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         /**
          * Flag to prevent recursive calls to {@link #reconnect()}. Gets set to false when the connection opens.
          */
-        private boolean isReconnecting;
+        private volatile boolean isReconnecting;
 
+        /**
+         * Setting this is the only way to avoid reconnecting an existing connection when a close event comes in. It
+         * gets set when the token for the connection is unrecoverably invalid as per error message received in
+         * {@link #onTextFrame(String, boolean, int)}.
+         */
+        private volatile boolean exitOnClose = false;
+
+        /**
+         * This flag gets set when renewing a token throws an exception. The subsequent call to
+         * {@link #onError(Throwable)} will then close the websocket.
+         */
+        private volatile boolean exitOnError = false;
+
+        /**
+         * Constructor
+         * 
+         * @param isReconnecting
+         *            Will be set inside {@link #connect(boolean)}.
+         */
         public DefaultWebSocketListener(boolean isReconnecting) {
             this.isReconnecting = isReconnecting;
         }
@@ -87,6 +107,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
             process(logListener, JSONValue.toJSONString(m));
             isReconnecting = false;
+            tokenValid = false;
+            exitOnClose = false;
+            exitOnError = false;
         }
 
         /**
@@ -98,7 +121,6 @@ public final class DefaultWebSocketClient implements WebSocketClient {
          *            the status code
          * @param reason
          *            the reason message
-         * 
          * @see "http://tools.ietf.org/html/rfc6455#section-5.5.1"
          */
         @Override
@@ -118,9 +140,13 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
             process(logListener, JSONValue.toJSONString(m));
 
-            if (!isReconnecting)
+            if (exitOnClose) {
+                if (running) {
+                    close();
+                }
+            } else if (!isReconnecting) {
                 reconnect();
-
+            }
         }
 
         /**
@@ -146,11 +172,28 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
             process(logListener, JSONValue.toJSONString(m));
 
-            if (!isReconnecting)
+            if (exitOnError) {
+                exitOnClose = true;
+                if (running) {
+                    close();
+                }
+            } else if (!isReconnecting) {
                 reconnect();
-
+            }
         }
 
+        /**
+         * For incoming messages. This also detects 401 error messages from the other side and handles token updates and
+         * reconnection, or setting {@link #exitOnClose} when the token remains invalid or {@link #exitOnError} when
+         * renewing the token throws an exception.
+         *
+         * @param payload
+         *            Incoming message as String
+         * @param finalFragment
+         *            For partial messages
+         * @param rsv
+         *            Extension bits
+         */
         @Override
         public void onTextFrame(String payload, boolean finalFragment, int rsv) {
             if (LOG.isLoggable(Level.FINEST)) {
@@ -165,11 +208,25 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             if (o instanceof Map && ((Map) o).containsKey("error")) {
                 Map error = (Map) ((Map) o).get("error");
                 if ((int) error.get("code") == 401) {
-                    tokenProvider.renewToken();
-                    reconnect();
+                    if (tokenValid) {
+                        try {
+                            tokenValid = false;
+                            tokenProvider.renewToken();
+                            reconnect();
+                        } catch (Throwable t) {
+                            exitOnError = true;
+                            onError(t);
+                        }
+                    } else {
+                        exitOnClose = true;
+                        process(dataListener, payload);
+                    }
                     return;
                 }
             }
+
+            // Token is valid when no error 401 came in.
+            tokenValid = true;
 
             process(dataListener, payload);
         }
