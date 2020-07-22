@@ -76,7 +76,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         /**
          * Constructor
-         * @param isReconnecting Will be set inside {@link #connect(boolean)}.
+         * 
+         * @param isReconnecting
+         *            Will be set inside {@link #connect(boolean)}.
          */
         public DefaultWebSocketListener(boolean isReconnecting) {
             this.isReconnecting = isReconnecting;
