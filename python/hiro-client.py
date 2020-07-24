@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# MIT License, (c) arago GmbH
-# https://github.com/arago/hiro-clients/
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
 import json
@@ -20,13 +21,13 @@ BACKOFF_KWARGS = {
     'giveup':    lambda e: e.response is not None and e.response.status_code < 500
 }
 
-class HiroClient():
+class Graphit():
 
     def __init__(self, username, password,
                  client_id, client_secret,
                  graph_endpoint, auth_endpoint,
                  iam_endpoint=None):
-        self._headers = {'Content-type': 'application/json;charset=UTF-8',
+        self._headers = {'Content-type': 'application/json',
                          'Accept': 'text/plain, application/json'
                         }
 
@@ -42,16 +43,25 @@ class HiroClient():
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def get(self, url, token=None):
+        url = url.replace('"','') # temporary workaround.
+
         if token is None:
             token, _token_expired = self.get_token()
         headers = self._headers
         if token is not None:
             headers['Authorization'] = "Bearer " + token
         res = requests.get(url, headers=headers, verify=False)
-        return self._parse_response(res)
+        if res.status_code == 401:
+            self.refresh_token()
+            raise requests.exceptions.RequestException
+        try:
+            return json.loads(res.text)
+        except json.decoder.JSONDecodeError:
+            return res.text
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def post(self, url, data, token=None):
+        url = url.replace('"', '') # temporary workaround.
         if token is None:
             token, _token_expired = self.get_token()
         headers = self._headers
@@ -60,7 +70,13 @@ class HiroClient():
         res = requests.post(url, data=json.dumps(data),
                             headers=headers,
                             verify=False)
-        return self._parse_response(res)
+        if res.status_code == 401:
+            self.refresh_token()
+            raise requests.exceptions.RequestException
+        try:
+            return json.loads(res.text)
+        except json.decoder.JSONDecodeError:
+            return res.text
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def delete(self, url, token=None):
@@ -70,28 +86,26 @@ class HiroClient():
         if token is not None:
             headers['Authorization'] = "Bearer " + token
         res = requests.delete(url, headers=headers, verify=False)
-        return self._parse_response(res)
+        if res.status_code == 401:
+            self.refresh_token()
+            raise requests.exceptions.RequestException
+        try:
+            return json.loads(res.text)
+        except json.decoder.JSONDecodeError:
+            return res.text
 
     def _timestamp(self):
         return "[" + time.asctime(time.gmtime()) + " UTC]"
 
     def _parse_response(self, res):
-        if res.status_code == 401:
-            self.refresh_token()
-            raise requests.exceptions.RequestException
-
-        if res.status_code == 888:
-          raise requests.exceptions.RequestException
-
-        if res.status_code > 307:
-          raise Exception('upstream error {}, {}'.format(res.status_code, res.text))
-
         try:
             body = json.loads(res.text)
-            if 'error' in body:
-                raise Exception('upstream error {}, {}'.format(res.status_code, res.text))
         except json.decoder.JSONDecodeError:
-            raise Exception('could not parse json response {}'.format(res.text))
+            body = res.text
+        if 200 <= res.status_code <= 399:
+            return body
+        else:
+            return {'error': {'code': res.status_code, 'message': body}}
 
     def get_identity(self, jwt_thetoken):
         url = self._auth_endpoint + '/me/account'
@@ -112,7 +126,7 @@ class HiroClient():
         if '_TOKEN' in res.keys():
             self._token = res['_TOKEN']
         else:
-            raise Exception('could not obtain token {}'.format(res))
+            self._token = None
         if 'expires-at' in res.keys():
             self._token_expired = res['expires-at']
 
@@ -135,7 +149,7 @@ class HiroClient():
     def create_node(self, data, obj_type, token=None, return_id=False):
         url = self._graph_endpoint + '/new/' + quote_plus(obj_type)
         res = self.post(url, data, token)
-        return res['ogit/_id'] if return_id else res
+        return res['ogit/_id'] if return_id and 'error' not in res else res
 
     def update_node(self, node_id, data, token=None):
         url = self._graph_endpoint + '/' + quote_plus(node_id)
@@ -175,7 +189,8 @@ class HiroClient():
         url = self._graph_endpoint + '/' + quote_plus(timeseries_node) + '/values' + (
             '?from=' + starttime if starttime else "") + ('&to=' + endtime if endtime else "")
         res = self.get(url, token)
-
+        if 'error' in res:
+            return res
         timeseries = res['items']
         timeseries.sort(key=lambda x: x['timestamp'])
         return timeseries
