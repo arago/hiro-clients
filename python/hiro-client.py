@@ -51,13 +51,7 @@ class Graphit():
         if token is not None:
             headers['Authorization'] = "Bearer " + token
         res = requests.get(url, headers=headers, verify=False)
-        if res.status_code == 401:
-            self.refresh_token()
-            raise requests.exceptions.RequestException
-        try:
-            return json.loads(res.text)
-        except json.decoder.JSONDecodeError:
-            return res.text
+        return self._parse_response(res)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def post(self, url, data, token=None):
@@ -70,13 +64,7 @@ class Graphit():
         res = requests.post(url, data=json.dumps(data),
                             headers=headers,
                             verify=False)
-        if res.status_code == 401:
-            self.refresh_token()
-            raise requests.exceptions.RequestException
-        try:
-            return json.loads(res.text)
-        except json.decoder.JSONDecodeError:
-            return res.text
+        return self._parse_response(res)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def delete(self, url, token=None):
@@ -86,6 +74,13 @@ class Graphit():
         if token is not None:
             headers['Authorization'] = "Bearer " + token
         res = requests.delete(url, headers=headers, verify=False)
+        return self._parse_response(res)
+
+    def _timestamp(self):
+        return "[" + time.asctime(time.gmtime()) + " UTC]"
+
+
+    def _parse_response(self, res):
         if res.status_code == 401:
             self.refresh_token()
             raise requests.exceptions.RequestException
@@ -93,19 +88,6 @@ class Graphit():
             return json.loads(res.text)
         except json.decoder.JSONDecodeError:
             return res.text
-
-    def _timestamp(self):
-        return "[" + time.asctime(time.gmtime()) + " UTC]"
-
-    def _parse_response(self, res):
-        try:
-            body = json.loads(res.text)
-        except json.decoder.JSONDecodeError:
-            body = res.text
-        if 200 <= res.status_code <= 399:
-            return body
-        else:
-            return {'error': {'code': res.status_code, 'message': body}}
 
     def get_identity(self, jwt_thetoken):
         url = self._auth_endpoint + '/me/account'
