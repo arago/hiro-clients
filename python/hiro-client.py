@@ -43,7 +43,6 @@ class Graphit():
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def get(self, url, token=None):
-        url = url.replace('"','') # temporary workaround.
 
         if token is None:
             token, _token_expired = self.get_token()
@@ -55,7 +54,7 @@ class Graphit():
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def post(self, url, data, token=None):
-        url = url.replace('"', '') # temporary workaround.
+
         if token is None:
             token, _token_expired = self.get_token()
         headers = self._headers
