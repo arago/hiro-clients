@@ -3,14 +3,11 @@ package co.arago.hiro.client.rest;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.builder.ClientBuilder.WebsocketType;
-import co.arago.hiro.client.util.*;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketListener;
-import org.asynchttpclient.ws.WebSocketUpgradeHandler;
-
+import co.arago.hiro.client.util.Helper;
+import co.arago.hiro.client.util.HiroCollections;
+import co.arago.hiro.client.util.HiroException;
+import co.arago.hiro.client.util.Listener;
+import co.arago.hiro.client.util.Throwables;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -19,10 +16,20 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.ws.WebSocket;
+import org.asynchttpclient.ws.WebSocketListener;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 public final class DefaultWebSocketClient implements WebSocketClient {
     private static final long PING_TIMEOUT = 30 * 1000;
@@ -258,8 +265,10 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         this.urlParameters = urlParameters;
         this.handler = handler;
 
-        for (Map filter : eventFilterMessages) {
-            this.eventFilterMessages.put(getFilterId(filter), filter);
+        if (eventFilterMessages != null) {
+            for (Map filter : eventFilterMessages) {
+                this.eventFilterMessages.put(getFilterId(filter), filter);
+            }
         }
 
         connect(false);
