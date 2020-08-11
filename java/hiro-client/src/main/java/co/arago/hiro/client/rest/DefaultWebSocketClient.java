@@ -58,7 +58,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         /**
          * Flag to prevent recursive calls to {@link #reconnect()}. Gets set to false when the connection opens.
          */
-        private volatile boolean isReconnecting;
+        private volatile boolean doReconnect;
 
         /**
          * Setting this is the only way to avoid reconnecting an existing connection when a close event comes in. It
@@ -77,15 +77,16 @@ public final class DefaultWebSocketClient implements WebSocketClient {
          * Constructor
          *
          * @param isReconnecting
-         *            Will be set inside {@link #connect(boolean)}.
+         *            Will be set inside {@link #connect(boolean)}. Set {@link #doReconnect} only if isReconnecting is
+         *            false.
          */
         public DefaultWebSocketListener(boolean isReconnecting) {
-            this.isReconnecting = isReconnecting;
+            this.doReconnect = !isReconnecting;
         }
 
         /**
          * Invoked when the {@link WebSocket} is open.<br/>
-         * Sets {@link #isReconnecting} to 'false' because the websocket is now connected again.
+         * Sets {@link #doReconnect} to 'false' because the websocket is now connected again.
          *
          * @param websocket
          *            the WebSocket
@@ -105,7 +106,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             }
 
             process(logListener, JSONValue.toJSONString(m));
-            isReconnecting = false;
+            doReconnect = true;
             tokenValid = false;
             exitOnClose = false;
             exitOnError = false;
@@ -143,7 +144,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 if (running) {
                     close();
                 }
-            } else if (!isReconnecting) {
+            } else if (doReconnect) {
                 reconnect();
             }
         }
@@ -176,7 +177,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 if (running) {
                     close();
                 }
-            } else if (!isReconnecting) {
+            } else if (doReconnect) {
                 reconnect();
             }
         }
@@ -218,7 +219,13 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                         }
                     } else {
                         exitOnClose = true;
-                        process(dataListener, payload);
+                        doReconnect = false;
+                        // process(dataListener, payload);
+                        Object message = error.get("message");
+                        onError(new HiroException(
+                                "Token never validated: "
+                                        + (message != null ? String.valueOf(message) : "authentication required"),
+                                401));
                     }
                     return;
                 }
@@ -257,8 +264,10 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         this.urlParameters = urlParameters;
         this.handler = handler;
 
-        for (Map filter : eventFilterMessages) {
-            this.eventFilterMessages.put(getFilterId(filter), filter);
+        if (eventFilterMessages != null) {
+            for (Map filter : eventFilterMessages) {
+                this.eventFilterMessages.put(getFilterId(filter), filter);
+            }
         }
 
         connect(false);
