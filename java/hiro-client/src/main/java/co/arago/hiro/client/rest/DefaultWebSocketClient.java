@@ -56,7 +56,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     private class DefaultWebSocketListener implements WebSocketListener {
 
         /**
-         * Flag to prevent recursive calls to {@link #reconnect()}. Gets set to false when the connection opens.
+         * Flag to prevent recursive calls to {@link #reconnect()}.
          */
         private volatile boolean doReconnect;
 
@@ -86,7 +86,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
         /**
          * Invoked when the {@link WebSocket} is open.<br/>
-         * Sets {@link #doReconnect} to 'false' because the websocket is now connected again.
+         * Sets {@link #doReconnect} to 'true' because the websocket is now connected again.
          *
          * @param websocket
          *            the WebSocket
