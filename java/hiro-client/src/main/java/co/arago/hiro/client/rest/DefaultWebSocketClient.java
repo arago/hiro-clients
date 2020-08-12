@@ -220,12 +220,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                     } else {
                         exitOnClose = true;
                         doReconnect = false;
-                        // process(dataListener, payload);
-                        Object message = error.get("message");
-                        onError(new HiroException(
-                                "Token never validated: "
-                                        + (message != null ? String.valueOf(message) : "authentication required"),
-                                401));
+                        process(dataListener, payload);
                     }
                     return;
                 }
