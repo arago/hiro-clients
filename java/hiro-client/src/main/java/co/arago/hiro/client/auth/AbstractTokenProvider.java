@@ -178,7 +178,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
         HttpClientHelper.debugResponse(response, LOG, Level.FINEST);
 
         if (response.getStatusCode() != 200) {
-            if (response.getStatusCode() == 400 || response.getStatusCode() == 403) {
+            if (response.getStatusCode() == 400 || response.getStatusCode() == 401 || response.getStatusCode() == 403) {
                 throw new HiroException("upstream error: "
                         + AuthenticatedRestClient.tryUnwrap(response.getResponseBody(), response.getStatusText()),
                         response.getStatusCode());
