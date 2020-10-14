@@ -128,15 +128,13 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
         BoundRequestBuilder builder = newRequest(data, apiUrl + "/revoke");
         builder.addHeader("Authorization", "Bearer " + currentToken);
 
-        Response response;
         try {
             HttpClientHelper.debugRequest(builder.build(), LOG, Level.FINEST);
 
-            response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
+            final Response response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
             if (resetState) {
                 resetTokenState();
             }
-
         } catch (Exception e) {
             Throwables.unchecked(e);
         }
@@ -155,14 +153,17 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
         }
 
         final Map data = new HashMap();
+        data.put(CLIENT_ID, clientId);
+        data.put(CLIENT_SECRET, clientSecret);
         data.put(REFRESH_TOKEN, refreshToken);
+
         final BoundRequestBuilder builder = newRequest(data, apiUrl + "/refresh");
 
         try {
             final Response response = checkResponse(builder.execute().get(timeout, TimeUnit.MILLISECONDS));
-
             process(parseResponse(response));
         } catch (Exception ex) {
+            LOG.log(Level.FINE, "error refreshing token", ex);
             obtainToken();
         }
     }
