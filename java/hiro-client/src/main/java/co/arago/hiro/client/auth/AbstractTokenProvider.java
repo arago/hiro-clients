@@ -33,7 +33,7 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     private static final Logger LOG = Logger.getLogger(AbstractTokenProvider.class.getName());
     protected static final String REFRESH_TOKEN = "refresh_token";
     protected static final String ACCESS_TOKEN = "_TOKEN";
-    protected static final String EXPIRES_IN = "expires_in";
+    protected static final String EXPIRES_AT = "expires-at";
     private static final String CLIENT_SECRET = "client_secret";
     private static final String CLIENT_ID = "client_id";
 
@@ -153,8 +153,6 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
         }
 
         final Map data = new HashMap();
-        data.put(CLIENT_ID, clientId);
-        data.put(CLIENT_SECRET, clientSecret);
         data.put(REFRESH_TOKEN, refreshToken);
 
         final BoundRequestBuilder builder = newRequest(data, apiUrl + "/refresh");
@@ -191,14 +189,13 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     }
 
     private void process(Map map) {
-        if (map.get(EXPIRES_IN) != null) {
-            this.invalidAfter = System.currentTimeMillis() + (((int) map.get(EXPIRES_IN)) * 1000);
-        } else {
-            this.invalidAfter = -1;
-        }
+        this.invalidAfter = map.get(EXPIRES_AT) != null ? ((long) map.get(EXPIRES_AT)) : -1L;
 
         this.currentToken = notEmpty((String) map.get(ACCESS_TOKEN), "upstream " + ACCESS_TOKEN);
-        this.refreshToken = (String) map.get(REFRESH_TOKEN);
+
+        if (map.get(REFRESH_TOKEN) != null) {
+            this.refreshToken = (String) map.get(REFRESH_TOKEN);
+        }
     }
 
     @Override
@@ -242,7 +239,6 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
     }
 
     private BoundRequestBuilder newRequest(Map data, String path) {
-
         data.put(CLIENT_ID, clientId);
         data.put(CLIENT_SECRET, clientSecret);
 
