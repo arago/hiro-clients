@@ -6,10 +6,12 @@ setup(
     version=__version__,
     packages=find_packages(),
 
+    python_requires='>=3.7',
+
     author="Wolfgang Hübner (arago GmbH)",
     author_email="info@arago.co",
     description="Hiro Client for Graph REST API of HIRO 7",
-    keywords="HIRO7 connector arago REST API",
+    keywords="HIRO7 arago GraphIt REST API",
     url="https://github.com/arago/hiro-clients",
     license="MIT",
     classifiers=[
