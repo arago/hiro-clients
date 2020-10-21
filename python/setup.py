@@ -7,7 +7,12 @@ setup(
     packages=find_packages(),
 
     python_requires='>=3.7',
-
+    
+    install_requires=[
+        'requests',
+        'backoff'
+    ],
+   
     author="Wolfgang Hübner (arago GmbH)",
     author_email="info@arago.co",
     description="Hiro Client for Graph REST API of HIRO 7",
