@@ -7,7 +7,7 @@ from os.path import dirname
 from hiro_client.batchclient import GraphitBatch, SessionData
 from hiro_client.client import Graphit, AuthenticationTokenError
 
-__version__ = "2.2.5"
+__version__ = "2.3.0"
 
 __all__ = [
     'Graphit', 'GraphitBatch', 'SessionData', 'AuthenticationTokenError'
