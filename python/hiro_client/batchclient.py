@@ -1,4 +1,3 @@
-import io
 from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Tuple, Any, Iterator
@@ -700,34 +699,24 @@ class AddAttachmentRunner(HiroBatchRunner):
         :param attributes: A dict of attributes to attach attachments to a vertex.
         :return: A response dict - usually directly the structure received from the backend.
         """
-        content_data = {}
-        try:
-            node_id = self.get_and_check_vertex_id(attributes)
-            content_data = self.get_and_check(attributes, '_content_data')
-            mimetype = content_data.get('mimetype')
+        node_id = self.get_and_check_vertex_id(attributes)
+        content_data = self.get_and_check(attributes, '_content_data')
+        mimetype = content_data.get('mimetype')
 
-            data = content_data.get('data')
-            filename = content_data.get('filename')
+        data = content_data.get('data')
+        filename = content_data.get('filename')
 
-            if data:
+        if data:
+            return self.connection.post_attachment(node_id=node_id,
+                                                   data=data,
+                                                   content_type=mimetype)
+        elif filename:
+            with open(filename, mode='rb') as attachment_file:
                 return self.connection.post_attachment(node_id=node_id,
-                                                       data=data,
+                                                       data=attachment_file,
                                                        content_type=mimetype)
-            elif filename:
-                with open(filename, mode='rb') as attachment_file:
-                    return self.connection.post_attachment(node_id=node_id,
-                                                           data=attachment_file,
-                                                           content_type=mimetype)
-            else:
-                raise ValueError('"data" or "filename" not found or empty in "attributes._content_data".')
-
-        except Exception:
-            # Safe fallback to avoid an exception when attributes['_content_data']['data'] contains an IO class.
-            io_data = content_data.get('data')
-            if isinstance(io_data, io.IOBase):
-                io_data.close()
-                content_data['data'] = '<{}>'.format(io_data.__class__.__name__)
-            raise
+        else:
+            raise ValueError('"data" or "filename" not found or empty in "attributes._content_data".')
 
 
 class CreateEdgesFromSessionRunner(CreateEdgesRunner):
@@ -814,8 +803,8 @@ class GraphitBatch:
         "delete_vertices",
         "create_edges",
         "delete_edges",
-        "add_timeseries"
-        "add_attachment"
+        "add_timeseries",
+        "add_attachments"
     ]
     """This is the list of commands (method names) that GraphitBatch handles."""
 
@@ -1002,7 +991,7 @@ class GraphitBatch:
             session = self.__init_session()
         return AddTimeseriesRunner(session, self.connection).run(attributes)
 
-    def add_attachment(self, attributes: dict, session: SessionData = None) -> Iterator[Tuple[dict, int]]:
+    def add_attachments(self, attributes: dict, session: SessionData = None) -> Iterator[Tuple[dict, int]]:
         """
         Add attachment to vertex.
 
@@ -1065,13 +1054,11 @@ class GraphitBatch:
                     if func:
                         yield from func(attributes, session)
                 else:
-                    sub_result, sub_code = [
-                                               HiroBatchRunner.error_message(
-                                                   Entity.UNDEFINED,
-                                                   Action.UNDEFINED,
-                                                   RuntimeError("No such command \"{}\".".format(command)),
-                                                   attributes)
-                                           ], 207
+                    sub_result, sub_code = HiroBatchRunner.error_message(
+                        Entity.UNDEFINED,
+                        Action.UNDEFINED,
+                        RuntimeError("No such command \"{}\".".format(command)),
+                        attributes), 207
 
                     yield sub_result, sub_code
 
