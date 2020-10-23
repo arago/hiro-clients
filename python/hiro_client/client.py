@@ -78,10 +78,13 @@ class TokenInfo:
 
         self.token = res.get('_TOKEN')
 
-        if 'expires-at' in res.keys():
-            self.expires_at = res['expires-at']
-        elif 'expires_in' in res.keys():
-            self.expires_at = self.get_epoch_millis() + int(res['expires_in']) * 1000
+        expires_at = res.get('expires-at')
+        if expires_at:
+            self.expires_at = int(expires_at)
+        else:
+            expires_in = res.get('expires_in')
+            if expires_in:
+                self.expires_at = self.get_epoch_millis() + int(expires_in) * 1000
 
         refresh_token = res.get('refresh_token')
         if refresh_token:

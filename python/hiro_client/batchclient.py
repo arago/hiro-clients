@@ -1,3 +1,4 @@
+import io
 from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Tuple, Any, Iterator
@@ -76,13 +77,16 @@ class HiroConnection:
 
 class SessionData:
     """
-    Contains caches and session parameters. At the moment it carries *xid_cache* and an *edge_store*.
+    Contains caches and session parameters. At the moment it carries *xid_cache*, an *edge_store* and a *content_store*.
     """
     xid_cache: dict = {}
+    """Cache for xid:id"""
 
     edge_store: dict = {}
+    """Stores a copy of '_edge_data' under the value of 'ogit/_id' as key."""
 
-    io_store: dict = {}
+    content_store: dict = {}
+    """Stores a copy of '_content_data' under the value of 'ogit/_id' as key."""
 
     @classmethod
     def new_with_cache_disabled(cls):
@@ -124,7 +128,7 @@ class SessionData:
 
         Registers a new xid:id mapping in the *xid_cache* unless it or any params are None.
 
-        Saves any edge data from the attributes under the ogit/_id given by the response.
+        Saves any edge data and content data from the attributes under the ogit/_id given by the response.
 
         :param attributes: Original attributes from the Runner command
         :param response: Response from the backend after the Runner command ran.
@@ -132,18 +136,15 @@ class SessionData:
         ogit_id = response.get("ogit/_id")
         ogit_xid = response.get("ogit/_xid")
         edge_data = attributes.get("_edge_data")
-        stream_data = attributes.get("_stream_data")
+        content_data = attributes.get("_content_data")
 
         self.register_xid(ogit_id, ogit_xid)
 
         if None not in [self.edge_store, ogit_id, edge_data]:
-            self.edge_store[ogit_id] = edge_data
+            self.edge_store[ogit_id] = edge_data.copy()
 
-        if None not in [self.io_store, ogit_id, stream_data]:
-            self.io_store[ogit_id] = {
-                "_stream_data": stream_data,
-                "_stream_content_type": attributes.get('_stream_content-type')
-            }
+        if None not in [self.content_store, ogit_id, content_data]:
+            self.content_store[ogit_id] = content_data.copy()
 
     def unregister_by_response(self, response: dict) -> None:
         """
@@ -158,8 +159,8 @@ class SessionData:
         if self.edge_store and ogit_id in self.edge_store.keys():
             del self.edge_store[ogit_id]
 
-        if self.io_store and ogit_id in self.io_store.keys():
-            del self.io_store[ogit_id]
+        if self.content_store and ogit_id in self.content_store.keys():
+            del self.content_store[ogit_id]
 
         if self.xid_cache:
             for k, v in self.xid_cache.items():
@@ -294,18 +295,19 @@ class HiroBatchRunner:
         return ogit_id
 
     @staticmethod
-    def get_and_check(attributes: dict, key: str) -> Any:
+    def get_and_check(attributes: dict, key: str, name: str = 'attributes') -> Any:
         """
         Raise ValueError when key is not in attributes or the value behind the key is empty.
 
         :param attributes: Dict of attributes.
         :param key: The key to look for in *attributes*.
+        :param name: Name of the attributes dict. Default is 'attributes'.
         :return: the value in *attributes* of the key.
         :raises ValueError: When 'key' does not exist in *attributes*.
         """
         attribute = attributes.get(key)
         if not attribute:
-            raise ValueError("{} not found or empty in attributes.".format(key))
+            raise ValueError("{} not found or empty in {}.".format(key, name))
 
         return attribute
 
@@ -385,6 +387,23 @@ class HiroBatchRunner:
 
     @staticmethod
     def success_message(entity: Entity, action: Action, data: dict) -> dict:
+        """
+        Success message format
+
+        ::
+
+            {
+                "status": "success",
+                "entity": entity.value,
+                "action": action.value,
+                "data": data
+            }
+
+        :param entity: Entity handled
+        :param action: Action done
+        :param data: JSON to return
+        :return: The message
+        """
         return {
             "status": Result.SUCCESS.value,
             "entity": entity.value,
@@ -394,6 +413,28 @@ class HiroBatchRunner:
 
     @staticmethod
     def error_message(entity: Entity, action: Action, error: Exception, original: dict) -> dict:
+        """
+        Failure message format
+
+        ::
+
+            {
+                "status": "fail",
+                "entity": entity.value,
+                "action": action.value,
+                "data": {
+                    "error": error.__class__.__name__,
+                    "message": str(error),
+                    "original_data": original
+                }
+            }
+
+        :param entity: Entity handled
+        :param action: Action done
+        :param error: The exception raised
+        :param original: The data that lead to the exception
+        :return: The message
+        """
         return {
             "status": Result.FAILURE.value,
             "entity": entity.value,
@@ -659,13 +700,34 @@ class AddAttachmentRunner(HiroBatchRunner):
         :param attributes: A dict of attributes to attach attachments to a vertex.
         :return: A response dict - usually directly the structure received from the backend.
         """
-        node_id = self.get_and_check_vertex_id(attributes)
-        data = self.get_and_check(attributes, '_stream_data')
-        content_type = attributes.get('_stream_content_type')
+        content_data = {}
+        try:
+            node_id = self.get_and_check_vertex_id(attributes)
+            content_data = self.get_and_check(attributes, '_content_data')
+            mimetype = content_data.get('mimetype')
 
-        return self.connection.post_attachment(node_id=node_id,
-                                               data=data,
-                                               content_type=content_type)
+            data = content_data.get('data')
+            filename = content_data.get('filename')
+
+            if data:
+                return self.connection.post_attachment(node_id=node_id,
+                                                       data=data,
+                                                       content_type=mimetype)
+            elif filename:
+                with open(filename, mode='rb') as attachment_file:
+                    return self.connection.post_attachment(node_id=node_id,
+                                                           data=attachment_file,
+                                                           content_type=mimetype)
+            else:
+                raise ValueError('"data" or "filename" not found or empty in "attributes._content_data".')
+
+        except Exception:
+            # Safe fallback to avoid an exception when attributes['_content_data']['data'] contains an IO class.
+            io_data = content_data.get('data')
+            if isinstance(io_data, io.IOBase):
+                io_data.close()
+                content_data['data'] = '<{}>'.format(io_data.__class__.__name__)
+            raise
 
 
 class CreateEdgesFromSessionRunner(CreateEdgesRunner):
@@ -715,24 +777,24 @@ class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
 
     def run_from_session(self) -> Iterator[Tuple[dict, int]]:
         """
-        Create a payload from the self.session_data.io_store and use it to upload attachments.
+        Create a payload from the self.session_data.content_store and use it to upload attachments.
 
         :return: A response dict - usually directly the structure received from the backend.
         """
-        for ogit_id, io_data in self.session_data.io_store.items():
-            for entry in io_data:
-                try:
-                    attributes = {
-                        'ogit/_id': ogit_id
-                    }
-                    attributes.update(entry)
-                    response = super().run_item(attributes)
+        for ogit_id, content_data in self.session_data.content_store.items():
+            attributes = {
+                'ogit/_id': ogit_id,
+                '_content_data': content_data
+            }
 
-                    message = self.success_message(self.entity, self.action, response)
-                    yield message, 200
-                except Exception as error:
-                    message = self.error_message(self.entity, self.action, error, edge)
-                    yield message, 207
+            try:
+                response = super().run_item(attributes)
+
+                message = self.success_message(self.entity, self.action, response)
+                yield message, 200
+            except Exception as error:
+                message = self.error_message(self.entity, self.action, error, attributes)
+                yield message, 207
 
 
 class GraphitBatch:
@@ -748,7 +810,7 @@ class GraphitBatch:
         "create_vertices",
         "update_vertices",
         "handle_vertices",
-        "handle_vertices_with_edges",
+        "handle_vertices_combined",
         "delete_vertices",
         "create_edges",
         "delete_edges",
@@ -944,8 +1006,21 @@ class GraphitBatch:
         """
         Add attachment to vertex.
 
-        Attributes needs at least a column "ogit/_id" or "ogit/_xid" to find the vertex to be updated, and a column
-        'data' containing the payload to update - use an IO class of io (like BytesIO or StringIO) for streaming.
+        Attributes needs at least a key "ogit/_id" or "ogit/_xid" to find the vertex to be updated, and a dict
+        '_content_data' containing the payload to update under key 'data' - use an IO class of io (like BytesIO or
+        StringIO) for streaming.
+
+        Example:
+        ::
+
+            {
+                "ogit/_id": "",
+                "_content_data": {
+                    "data": "(payload)",
+                    "filename": "(name of a file to read if no 'data' is given)",
+                    "mimetype": "(content-type)"
+                }
+            }
 
         :param attributes: Contains the attachment data.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
@@ -977,11 +1052,13 @@ class GraphitBatch:
         """
         session = self.__init_session()
 
+        handle_session_data = False
         for command_entry in command_iter:
             for command, attributes in command_entry.items():
 
-                if command == "handle_vertices_with_edges":
+                if command == "handle_vertices_combined":
                     command = "handle_vertices"
+                    handle_session_data = True
 
                 if command in self.commands:
                     func = getattr(self, command, None)
@@ -998,5 +1075,6 @@ class GraphitBatch:
 
                     yield sub_result, sub_code
 
-        yield from CreateEdgesFromSessionRunner(session, self.connection).run_from_session()
-        yield from CreateAttachmentsFromSessionRunner(session, self.connection).run_from_session()
+        if handle_session_data:
+            yield from CreateEdgesFromSessionRunner(session, self.connection).run_from_session()
+            yield from CreateAttachmentsFromSessionRunner(session, self.connection).run_from_session()
