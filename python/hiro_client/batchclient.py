@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional, Tuple, Any, Iterator
+from typing import Optional, Tuple, Any, Iterator, IO
 
 from hiro_client.client import Graphit
 
@@ -72,6 +72,31 @@ class HiroConnection:
 
     def post_attachment(self, node_id: str, data: Any, content_type: str = None):
         return self.client.post_attachment(node_id, data, content_type, token=self.token)
+
+
+class AbstractIOCarrier:
+    """
+    Abstract class that handles IO. When a child of this class is encountered, its IO is opened and read,
+    then closed.
+    """
+    io_base: IO = None
+
+    @abstractmethod
+    def open(self) -> IO:
+        """
+        Abstract base class for opening IO
+
+        :return: The IO opened
+        :raises IOError: Any IO Error
+        """
+        pass
+
+    def close(self) -> None:
+        """
+        Close the IO
+        """
+        if self.io_base:
+            self.io_base.close()
 
 
 class SessionData:
@@ -685,20 +710,14 @@ class AddAttachmentRunner(HiroBatchRunner):
     Attach an attachment to a vertex.
     """
 
-    allow_open_files: bool = False
-    """Allow opening of files within this class. Default is False"""
-
-    def __init__(self, session_data: SessionData, connection: HiroConnection, allow_open_files: bool = False):
+    def __init__(self, session_data: SessionData, connection: HiroConnection):
         """
         Attach an attachment to a vertex.
 
         :param session_data: Required: Session data / caches.
         :param connection: Required: The handler for the connection to HIRO Graphit.
-        :param allow_open_files: Allow opening of files. Default is False.
         """
         super().__init__(Entity.ATTACHMENT, Action.CREATE, session_data, connection)
-
-        self.allow_open_files = allow_open_files
 
     def run_item(self, attributes: dict) -> dict:
         """
@@ -710,22 +729,21 @@ class AddAttachmentRunner(HiroBatchRunner):
         mimetype = content_data.get('mimetype')
 
         data = content_data.get('data')
-        filename = content_data.get('filename')
 
-        if data:
+        if isinstance(data, AbstractIOCarrier):
+            io_item = data.open()
+            try:
+                return self.connection.post_attachment(node_id=node_id,
+                                                       data=io_item,
+                                                       content_type=mimetype)
+            finally:
+                data.close()
+        elif data:
             return self.connection.post_attachment(node_id=node_id,
                                                    data=data,
                                                    content_type=mimetype)
-        elif filename:
-            if self.allow_open_files is True:
-                with open(filename, mode='rb') as attachment_file:
-                    return self.connection.post_attachment(node_id=node_id,
-                                                           data=attachment_file,
-                                                           content_type=mimetype)
-            else:
-                raise PermissionError('Using "filename" to open files is not allowed.')
         else:
-            raise ValueError('"data" or "filename" not found or empty in "attributes._content_data".')
+            raise ValueError('"data" not found or empty in "attributes._content_data".')
 
 
 class CreateEdgesFromSessionRunner(CreateEdgesRunner):
@@ -804,8 +822,6 @@ class GraphitBatch:
 
     use_xid_cache: bool
     """Use xid caching. Default is True when omitted or set to None."""
-    allow_open_files: bool
-    """Allow opening of local files. Default is False unless explicitly set to True."""
 
     commands = [
         "create_vertices",
@@ -829,8 +845,7 @@ class GraphitBatch:
                  client_secret: str = None,
                  auth_endpoint: str = None,
                  iam_endpoint: str = None,
-                 use_xid_cache: bool = True,
-                 allow_open_files: bool = False):
+                 use_xid_cache: bool = True):
         """
         Constructor
 
@@ -847,7 +862,6 @@ class GraphitBatch:
         :param auth_endpoint: optional, required if *hiro_token* is None: URL of the authentication API.
         :param iam_endpoint: optional: URL of the IAM instance for accessing accounts. Default is None.
         :param use_xid_cache: Use xid caching. Default is True when omitted or set to None.
-        :param allow_open_files: Allow opening of files. Default is False.
         """
 
         if not graph_endpoint:
@@ -885,7 +899,6 @@ class GraphitBatch:
         )
 
         self.use_xid_cache = False if use_xid_cache is False else True
-        self.allow_open_files = True if allow_open_files is True else False
 
     def __init_session(self) -> SessionData:
         """
@@ -1033,7 +1046,7 @@ class GraphitBatch:
         """
         if not session:
             session = self.__init_session()
-        return AddAttachmentRunner(session, self.connection, allow_open_files=self.allow_open_files).run(attributes)
+        return AddAttachmentRunner(session, self.connection).run(attributes)
 
     def multi_command(self, command_iter: Iterator[dict]) -> Iterator[Tuple[dict, int]]:
         """
@@ -1078,13 +1091,5 @@ class GraphitBatch:
                     yield sub_result, sub_code
 
         if handle_session_data:
-            yield from CreateEdgesFromSessionRunner(
-                session,
-                self.connection
-            ).run_from_session()
-
-            yield from CreateAttachmentsFromSessionRunner(
-                session,
-                self.connection,
-                allow_open_files=self.allow_open_files
-            ).run_from_session()
+            yield from CreateEdgesFromSessionRunner(session, self.connection).run_from_session()
+            yield from CreateAttachmentsFromSessionRunner(session, self.connection).run_from_session()
