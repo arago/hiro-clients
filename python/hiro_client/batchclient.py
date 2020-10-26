@@ -1024,8 +1024,8 @@ class GraphitBatch:
         Add attachment to vertex.
 
         Attributes needs at least a key "ogit/_id" or "ogit/_xid" to find the vertex to be updated, and a dict
-        '_content_data' containing the payload to update under key 'data' - use an IO class of io (like BytesIO or
-        StringIO) for streaming.
+        '_content_data' containing the payload to update under key 'data' - use an IO class of AbstractIOCarrier
+        for streaming.
 
         Example:
         ::
@@ -1034,7 +1034,6 @@ class GraphitBatch:
                 "ogit/_id": "",
                 "_content_data": {
                     "data": "(payload)",
-                    "filename": "(name of a file to read if no 'data' is given)",
                     "mimetype": "(content-type)"
                 }
             }
