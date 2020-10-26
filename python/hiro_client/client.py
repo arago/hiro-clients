@@ -11,10 +11,7 @@ from urllib.parse import quote_plus, quote, urlencode
 
 import backoff
 import requests
-
-# from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-# requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+import requests.packages.urllib3.exceptions
 
 BACKOFF_ARGS = [
     backoff.expo,
@@ -25,6 +22,13 @@ BACKOFF_KWARGS = {
     'jitter': backoff.random_jitter,
     'giveup': lambda e: e.response is not None and e.response.status_code < 500
 }
+
+
+def accept_all_certs():
+    """
+    Globally disable InsecureRequestWarning
+    """
+    requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 
 class TokenInfo:
@@ -122,7 +126,7 @@ class AbstractAPI:
         :param graph_endpoint: Full url for graph
         :param auth_endpoint: Full url for auth
         :param iam_endpoint: Full url for IAM access (optional)
-        :param raise_exceptions: Raise exceptions on HTTP status codes that denote an error. Default is False
+        :param raise_exceptions: Raise exceptions on HTTP status codes that denote an error. Default is False.
         """
         self._headers = {'Content-type': 'application/json',
                          'Accept': 'text/plain, application/json'
