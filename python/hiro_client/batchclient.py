@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional, Tuple, Any, Iterator
+from typing import Optional, Tuple, Any, Iterator, IO
 
 from hiro_client.client import Graphit
 
@@ -21,7 +21,8 @@ class Entity(Enum):
     UNDEFINED = "undefined"
     VERTEX = "vertex"
     EDGE = "edge"
-    TIMESERIES = "timeseries"
+    TIMESERIES = "timeseries",
+    ATTACHMENT = "attachment"
 
 
 class HiroConnection:
@@ -69,14 +70,47 @@ class HiroConnection:
     def post_timeseries(self, node_id: str, items: list):
         return self.client.post_timeseries(node_id, items, token=self.token)
 
+    def post_attachment(self, node_id: str, data: Any, content_type: str = None):
+        return self.client.post_attachment(node_id, data, content_type, token=self.token)
+
+
+class AbstractIOCarrier:
+    """
+    Abstract class that handles IO. When a child of this class is encountered, its IO is opened and read,
+    then closed.
+    """
+    io_base: IO = None
+
+    @abstractmethod
+    def open(self) -> IO:
+        """
+        Abstract base class for opening IO
+
+        :return: The IO opened
+        :raises IOError: Any IO Error
+        """
+        pass
+
+    def close(self) -> None:
+        """
+        Close the IO
+        """
+        if self.io_base:
+            self.io_base.close()
+
 
 class SessionData:
     """
-    Contains caches and session parameters. At the moment it carries *xid_cache* and an *edge_store*.
+    Contains caches and session parameters. At the moment it carries *xid_cache*, an *edge_store* and a *content_store*.
     """
     xid_cache: dict = {}
+    """Cache for xid:id"""
 
     edge_store: dict = {}
+    """Stores a copy of '_edge_data' under the value of 'ogit/_id' as key."""
+
+    content_store: dict = {}
+    """Stores a copy of '_content_data' under the value of 'ogit/_id' as key."""
 
     @classmethod
     def new_with_cache_disabled(cls):
@@ -118,7 +152,7 @@ class SessionData:
 
         Registers a new xid:id mapping in the *xid_cache* unless it or any params are None.
 
-        Saves any edge data from the attributes under the ogit/_id given by the response.
+        Saves any edge data and content data from the attributes under the ogit/_id given by the response.
 
         :param attributes: Original attributes from the Runner command
         :param response: Response from the backend after the Runner command ran.
@@ -126,11 +160,15 @@ class SessionData:
         ogit_id = response.get("ogit/_id")
         ogit_xid = response.get("ogit/_xid")
         edge_data = attributes.get("_edge_data")
+        content_data = attributes.get("_content_data")
 
         self.register_xid(ogit_id, ogit_xid)
 
         if None not in [self.edge_store, ogit_id, edge_data]:
-            self.edge_store[ogit_id] = edge_data
+            self.edge_store[ogit_id] = edge_data.copy()
+
+        if None not in [self.content_store, ogit_id, content_data]:
+            self.content_store[ogit_id] = content_data.copy()
 
     def unregister_by_response(self, response: dict) -> None:
         """
@@ -144,6 +182,9 @@ class SessionData:
 
         if self.edge_store and ogit_id in self.edge_store.keys():
             del self.edge_store[ogit_id]
+
+        if self.content_store and ogit_id in self.content_store.keys():
+            del self.content_store[ogit_id]
 
         if self.xid_cache:
             for k, v in self.xid_cache.items():
@@ -278,18 +319,19 @@ class HiroBatchRunner:
         return ogit_id
 
     @staticmethod
-    def get_and_check(attributes: dict, key: str) -> Any:
+    def get_and_check(attributes: dict, key: str, name: str = 'attributes') -> Any:
         """
         Raise ValueError when key is not in attributes or the value behind the key is empty.
 
         :param attributes: Dict of attributes.
         :param key: The key to look for in *attributes*.
+        :param name: Name of the attributes dict. Default is 'attributes'.
         :return: the value in *attributes* of the key.
         :raises ValueError: When 'key' does not exist in *attributes*.
         """
         attribute = attributes.get(key)
         if not attribute:
-            raise ValueError("{} not found or empty in attributes.".format(key))
+            raise ValueError("{} not found or empty in {}.".format(key, name))
 
         return attribute
 
@@ -369,6 +411,23 @@ class HiroBatchRunner:
 
     @staticmethod
     def success_message(entity: Entity, action: Action, data: dict) -> dict:
+        """
+        Success message format
+
+        ::
+
+            {
+                "status": "success",
+                "entity": entity.value,
+                "action": action.value,
+                "data": data
+            }
+
+        :param entity: Entity handled
+        :param action: Action done
+        :param data: JSON to return
+        :return: The message
+        """
         return {
             "status": Result.SUCCESS.value,
             "entity": entity.value,
@@ -378,6 +437,28 @@ class HiroBatchRunner:
 
     @staticmethod
     def error_message(entity: Entity, action: Action, error: Exception, original: dict) -> dict:
+        """
+        Failure message format
+
+        ::
+
+            {
+                "status": "fail",
+                "entity": entity.value,
+                "action": action.value,
+                "data": {
+                    "error": error.__class__.__name__,
+                    "message": str(error),
+                    "original_data": original
+                }
+            }
+
+        :param entity: Entity handled
+        :param action: Action done
+        :param error: The exception raised
+        :param original: The data that lead to the exception
+        :return: The message
+        """
         return {
             "status": Result.FAILURE.value,
             "entity": entity.value,
@@ -624,6 +705,47 @@ class AddTimeseriesRunner(HiroBatchRunner):
         return self.connection.post_timeseries(node_id, items)
 
 
+class AddAttachmentRunner(HiroBatchRunner):
+    """
+    Attach an attachment to a vertex.
+    """
+
+    def __init__(self, session_data: SessionData, connection: HiroConnection):
+        """
+        Attach an attachment to a vertex.
+
+        :param session_data: Required: Session data / caches.
+        :param connection: Required: The handler for the connection to HIRO Graphit.
+        """
+        super().__init__(Entity.ATTACHMENT, Action.CREATE, session_data, connection)
+
+    def run_item(self, attributes: dict) -> dict:
+        """
+        :param attributes: A dict of attributes to attach attachments to a vertex.
+        :return: A response dict - usually directly the structure received from the backend.
+        """
+        node_id = self.get_and_check_vertex_id(attributes)
+        content_data = self.get_and_check(attributes, '_content_data')
+        mimetype = content_data.get('mimetype')
+
+        data = content_data.get('data')
+
+        if isinstance(data, AbstractIOCarrier):
+            io_item = data.open()
+            try:
+                return self.connection.post_attachment(node_id=node_id,
+                                                       data=io_item,
+                                                       content_type=mimetype)
+            finally:
+                data.close()
+        elif data:
+            return self.connection.post_attachment(node_id=node_id,
+                                                   data=data,
+                                                   content_type=mimetype)
+        else:
+            raise ValueError('"data" not found or empty in "attributes._content_data".')
+
+
 class CreateEdgesFromSessionRunner(CreateEdgesRunner):
     """
     Create edges between vertices from edges saved in session
@@ -664,6 +786,33 @@ class CreateEdgesFromSessionRunner(CreateEdgesRunner):
                     yield message, 207
 
 
+class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
+    """
+    Add attachments to the vertices created by this session
+    """
+
+    def run_from_session(self) -> Iterator[Tuple[dict, int]]:
+        """
+        Create a payload from the self.session_data.content_store and use it to upload attachments.
+
+        :return: A response dict - usually directly the structure received from the backend.
+        """
+        for ogit_id, content_data in self.session_data.content_store.items():
+            attributes = {
+                'ogit/_id': ogit_id,
+                '_content_data': content_data
+            }
+
+            try:
+                response = super().run_item(attributes)
+
+                message = self.success_message(self.entity, self.action, response)
+                yield message, 200
+            except Exception as error:
+                message = self.error_message(self.entity, self.action, error, attributes)
+                yield message, 207
+
+
 class GraphitBatch:
     """
     This class handles lists of vertex-, edge- or timeseries-data via Graphit.
@@ -672,16 +821,18 @@ class GraphitBatch:
     connection: HiroConnection
 
     use_xid_cache: bool
+    """Use xid caching. Default is True when omitted or set to None."""
 
     commands = [
         "create_vertices",
         "update_vertices",
         "handle_vertices",
-        "handle_vertices_with_edges",
+        "handle_vertices_combined",
         "delete_vertices",
         "create_edges",
         "delete_edges",
-        "add_timeseries"
+        "add_timeseries",
+        "add_attachments"
     ]
     """This is the list of commands (method names) that GraphitBatch handles."""
 
@@ -694,7 +845,7 @@ class GraphitBatch:
                  client_secret: str = None,
                  auth_endpoint: str = None,
                  iam_endpoint: str = None,
-                 use_xid_cache: bool = None):
+                 use_xid_cache: bool = True):
         """
         Constructor
 
@@ -868,6 +1019,34 @@ class GraphitBatch:
             session = self.__init_session()
         return AddTimeseriesRunner(session, self.connection).run(attributes)
 
+    def add_attachments(self, attributes: dict, session: SessionData = None) -> Iterator[Tuple[dict, int]]:
+        """
+        Add attachment to vertex.
+
+        Attributes needs at least a key "ogit/_id" or "ogit/_xid" to find the vertex to be updated, and a dict
+        '_content_data' containing the payload to update under key 'data' - use an IO class of AbstractIOCarrier
+        for streaming.
+
+        Example:
+        ::
+
+            {
+                "ogit/_id": "",
+                "_content_data": {
+                    "data": "(payload)",
+                    "mimetype": "(content-type)"
+                }
+            }
+
+        :param attributes: Contains the attachment data.
+        :param session: optional: Persistent data for the current session. Use a local session if this is not set.
+        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
+                 some errors occurred.
+        """
+        if not session:
+            session = self.__init_session()
+        return AddAttachmentRunner(session, self.connection).run(attributes)
+
     def multi_command(self, command_iter: Iterator[dict]) -> Iterator[Tuple[dict, int]]:
         """
         Run a multi-command batch.
@@ -889,30 +1068,27 @@ class GraphitBatch:
         """
         session = self.__init_session()
 
-        handle_session_edges = False
+        handle_session_data = False
         for command_entry in command_iter:
             for command, attributes in command_entry.items():
 
-                # Special case "handle_vertices_with_edges". This is the same as "handle_vertices", but edge
-                # data is transported alongside and has to be handled after "handle_vertices" has finished.
-                if command == "handle_vertices_with_edges":
-                    handle_session_edges = True
+                if command == "handle_vertices_combined":
                     command = "handle_vertices"
+                    handle_session_data = True
 
                 if command in self.commands:
                     func = getattr(self, command, None)
                     if func:
                         yield from func(attributes, session)
                 else:
-                    sub_result, sub_code = [
-                                               HiroBatchRunner.error_message(
-                                                   Entity.UNDEFINED,
-                                                   Action.UNDEFINED,
-                                                   RuntimeError("No such command \"{}\".".format(command)),
-                                                   attributes)
-                                           ], 207
+                    sub_result, sub_code = HiroBatchRunner.error_message(
+                        Entity.UNDEFINED,
+                        Action.UNDEFINED,
+                        RuntimeError("No such command \"{}\".".format(command)),
+                        attributes), 207
 
                     yield sub_result, sub_code
 
-        if handle_session_edges:
+        if handle_session_data:
             yield from CreateEdgesFromSessionRunner(session, self.connection).run_from_session()
+            yield from CreateAttachmentsFromSessionRunner(session, self.connection).run_from_session()

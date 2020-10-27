@@ -2,3 +2,4 @@
 target/
 _hiro.version
 *.iml
+*.egg-info

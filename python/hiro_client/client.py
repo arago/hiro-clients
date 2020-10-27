@@ -6,15 +6,12 @@
 import json
 import time
 from abc import abstractmethod
-from typing import Optional
-from urllib.parse import quote_plus
+from typing import Optional, Any, Iterator
+from urllib.parse import quote_plus, quote, urlencode
 
 import backoff
 import requests
-
-# from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-# requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+import requests.packages.urllib3.exceptions
 
 BACKOFF_ARGS = [
     backoff.expo,
@@ -25,6 +22,13 @@ BACKOFF_KWARGS = {
     'jitter': backoff.random_jitter,
     'giveup': lambda e: e.response is not None and e.response.status_code < 500
 }
+
+
+def accept_all_certs():
+    """
+    Globally disable InsecureRequestWarning
+    """
+    requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 
 class TokenInfo:
@@ -78,10 +82,13 @@ class TokenInfo:
 
         self.token = res.get('_TOKEN')
 
-        if 'expires-at' in res.keys():
-            self.expires_at = res['expires-at']
-        elif 'expires_in' in res.keys():
-            self.expires_at = self.get_epoch_millis() + int(res['expires_in']) * 1000
+        expires_at = res.get('expires-at')
+        if expires_at:
+            self.expires_at = int(expires_at)
+        else:
+            expires_in = res.get('expires_in')
+            if expires_in:
+                self.expires_at = self.get_epoch_millis() + int(expires_in) * 1000
 
         refresh_token = res.get('refresh_token')
         if refresh_token:
@@ -98,7 +105,7 @@ class TokenInfo:
 
 class AbstractAPI:
     __raise_exceptions: bool = False
-    """Use res.check_status_error() to generate exceptions on http errors"""
+    """Use res._check_status_error() to generate exceptions on http errors"""
 
     def __init__(self,
                  username: str,
@@ -119,7 +126,7 @@ class AbstractAPI:
         :param graph_endpoint: Full url for graph
         :param auth_endpoint: Full url for auth
         :param iam_endpoint: Full url for IAM access (optional)
-        :param raise_exceptions: Raise exceptions on HTTP status codes that denote an error. Default is False
+        :param raise_exceptions: Raise exceptions on HTTP status codes that denote an error. Default is False.
         """
         self._headers = {'Content-type': 'application/json',
                          'Accept': 'text/plain, application/json'
@@ -137,7 +144,7 @@ class AbstractAPI:
     @property
     def raise_exceptions(self) -> bool:
         """
-        Use res.check_status_error() to generate exceptions on http errors
+        Use res._check_status_error() to generate exceptions on http errors
 
         :return: self.__raise_exceptions
         """
@@ -146,7 +153,7 @@ class AbstractAPI:
     @raise_exceptions.setter
     def raise_exceptions(self, enable: bool) -> None:
         """
-        Use res.check_status_error() to generate exceptions on http errors
+        Use res._check_status_error() to generate exceptions on http errors
 
         :param enable: The value to set.
         """
@@ -155,6 +162,42 @@ class AbstractAPI:
     ###############################################################################################################
     # Basic requests
     ###############################################################################################################
+
+    @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
+    def get_binary(self, url: str, token: str = None) -> Iterator[bytes]:
+        """
+        Implementation of GET for binary data.
+
+        :param url: Url to use
+        :param token: External token to use. Default is False to handle token internally.
+        :return: Yields an iterator over raw chunks of the response payload.
+        """
+        with requests.get(url,
+                          headers=self._get_headers(token, content=False),
+                          verify=False,
+                          stream=True) as res:
+            self._check_response(res, token)
+
+            yield from res.iter_content(chunk_size=65536)
+
+    @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
+    def post_binary(self, url: str, data: Any, content_type: str = None, token: str = None) -> dict:
+        """
+        Implementation of POST for binary data.
+
+        :param url: Url to use
+        :param data: The payload to POST. This can be anything 'requests.post(data=...)' supports.
+        :param content_type: The content type of the data. Defaults to "application/octet-stream" internally if unset.
+        :param token: External token to use. Default is False to handle token internally.
+        :return: The payload of the response
+        """
+        headers = self._get_headers(token)
+        headers['Content-Type'] = content_type or "application/octet-stream"
+        res = requests.post(url,
+                            data=data,
+                            headers=headers,
+                            verify=False)
+        return self._parse_json_response(res, token)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def get(self, url: str, token: str = None) -> dict:
@@ -166,12 +209,12 @@ class AbstractAPI:
         :return: The payload of the response
         """
         res = requests.get(url,
-                           headers=self.get_headers(token, content=False),
+                           headers=self._get_headers(token, content=False),
                            verify=False)
-        return self._parse_response(res, token)
+        return self._parse_json_response(res, token)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
-    def post(self, url: str, data, token: str = None) -> dict:
+    def post(self, url: str, data: Any, token: str = None) -> dict:
         """
         Implementation of POST
 
@@ -181,10 +224,10 @@ class AbstractAPI:
         :return: The payload of the response
         """
         res = requests.post(url,
-                            data=json.dumps(data),
-                            headers=self.get_headers(token, content=True),
+                            json=data,
+                            headers=self._get_headers(token, content=True),
                             verify=False)
-        return self._parse_response(res, token)
+        return self._parse_json_response(res, token)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
     def delete(self, url: str, token: str = None) -> dict:
@@ -196,15 +239,15 @@ class AbstractAPI:
         :return: The payload of the response
         """
         res = requests.delete(url,
-                              headers=self.get_headers(token, content=False),
+                              headers=self._get_headers(token, content=False),
                               verify=False)
-        return self._parse_response(res, token)
+        return self._parse_json_response(res, token)
 
     ###############################################################################################################
     # Tool methods for requests
     ###############################################################################################################
 
-    def get_headers(self, token: str, content: bool = True) -> dict:
+    def _get_headers(self, token: str, content: bool = True) -> dict:
         """
         Create a header dict for requests. Uses abstract method *self._handle_token()*.
 
@@ -223,7 +266,34 @@ class AbstractAPI:
 
         return headers
 
-    def check_status_error(self, res: requests.Response) -> None:
+    @staticmethod
+    def _get_query_part(params: dict) -> str:
+        """
+        Create the query part of an url. Keys in *params* that are set to None are removed.
+
+        :param params: A dict of params to use for the query.
+        :return: The query part of an url with a leading '?', or an empty string when query is empty.
+        """
+        params_cleaned = {k: v for k, v in params.items() if v is not None}
+        return '?' + urlencode(params_cleaned, quote_via=quote, safe="/,") if params_cleaned else ""
+
+    def _parse_json_response(self, res: requests.Response, token: str = None) -> dict:
+        """
+        Parse the response of the backend.
+
+        :param res: The result payload
+        :param token: The external token if provided
+        :return: The result payload
+        :raises RequestException: On HTTP errors.
+        """
+        try:
+            self._check_response(res, token)
+            self._check_status_error(res)
+            return res.json()
+        except (json.JSONDecodeError, ValueError):
+            return {"error": {"message": res.text, "code": 999}}
+
+    def _check_status_error(self, res: requests.Response) -> None:
         """
         Catch exceptions and rethrow them with additional information returned by the error response body.
 
@@ -236,9 +306,9 @@ class AbstractAPI:
         except requests.exceptions.HTTPError as err:
             http_error_msg = str(err.args[0])
 
-            if res.text:
+            if res.content:
                 try:
-                    json_result: dict = json.loads(res.text)
+                    json_result: dict = res.json()
                     message = json_result['error']['message']
                     http_error_msg += ": " + message
                 except (json.JSONDecodeError, KeyError):
@@ -253,15 +323,14 @@ class AbstractAPI:
     ###############################################################################################################
 
     @abstractmethod
-    def _parse_response(self, res: requests.Response, token: str = None) -> dict:
+    def _check_response(self, res: requests.Response, token: str) -> None:
         """
-        Abstract base function for response parsing. Might check for authentication errors depending on the context.
+        Abstract base function for response checking. Might check for authentication errors depending on the context.
 
         :param res: The result payload
         :param token: The external token if provided
-        :return: The result payload
         """
-        raise RuntimeError('Cannot use _parse_response of this abstract class.')
+        raise RuntimeError('Cannot use _check_response of this abstract class.')
 
     @abstractmethod
     def _handle_token(self, token: str) -> Optional[str]:
@@ -349,26 +418,19 @@ class TokenHandler(AbstractAPI):
     # Response and token handling
     ###############################################################################################################
 
-    def _parse_response(self, res: requests.Response, token: str = None) -> dict:
+    def _check_response(self, res: requests.Response, token: str) -> None:
         """
-        Parse the response of the backend and raise an error when the status_code of the response demands it.
-        Do *not* check for authentication errors.
+        This is a dummy method. No response checking here.
 
         :param res: The result payload
         :param token: The external token if provided
-        :return: The result payload
-        :raises RequestException: On HTTP errors.
         """
-        try:
-            self.check_status_error(res)
-            return json.loads(res.text)
-        except json.decoder.JSONDecodeError:
-            return {"error": {"message": res.text, "code": 999}}
+        return
 
     def _handle_token(self, token: str) -> Optional[str]:
         """
         Just return *token*. This *token* is usually None in this context, therefore a header without Authorization
-        will be created in *self.get_headers()*.
+        will be created in *self._get_headers()*.
 
         Does *not* try to obtain or refresh a token.
 
@@ -422,16 +484,16 @@ class Graphit(AbstractAPI):
     # Response and token handling
     ###############################################################################################################
 
-    def _parse_response(self, res: requests.Response, token: str = None) -> dict:
+    def _check_response(self, res: requests.Response, token: str) -> None:
         """
-        Parse the response of the backend. Also catches error 401 and tries to renew token.
+        Response checking. Tries to refresh the token on status_code 401, then raises RequestException to try
+        again using backoff.
 
         :param res: The result payload
         :param token: The external token if provided
-        :return: The result payload
+        :raises requests.exceptions.RequestException: When an error 401 occurred and the token has been refreshed.
         :raises AuthenticationTokenError: When an external token has been provided but code 401 has been returned
                                           from the backend.
-        :raises RequestException: On other HTTP errors.
         """
         if res.status_code == 401:
             if token:
@@ -442,11 +504,6 @@ class Graphit(AbstractAPI):
 
             # Raise this exception to trigger retry with backoff
             raise requests.exceptions.RequestException
-        try:
-            self.check_status_error(res)
-            return json.loads(res.text)
-        except json.decoder.JSONDecodeError:
-            return {"error": {"message": res.text, "code": 999}}
 
     def _handle_token(self, token: str) -> Optional[str]:
         """
@@ -581,9 +638,12 @@ class Graphit(AbstractAPI):
         :param token: Optional external token.
         :return: The result payload
         """
-        url = self._graph_endpoint + '/' + quote_plus(node_id) + (
-            '?fields=' + quote_plus(fields.replace(" ", ""), safe="/,") if fields else ""
-        ) + ('?listMeta=True' if meta else "")
+        query = {
+            "fields": fields.replace(" ", "") if fields else None,
+            "listMeta": "true" if meta else None
+        }
+
+        url = self._graph_endpoint + '/' + quote_plus(node_id) + self._get_query_part(query)
         return self.get(url, token)
 
     def get_node_by_xid(self, node_id: str, fields: str = None, meta: bool = None, token: str = None) -> dict:
@@ -596,9 +656,12 @@ class Graphit(AbstractAPI):
         :param token: Optional external token.
         :return: The result payload
         """
-        url = self._graph_endpoint + '/xid/' + quote_plus(node_id) + (
-            '?fields=' + quote_plus(fields.replace(" ", ""), safe="/,") if fields else ""
-        ) + ('?listMeta=True' if meta else "")
+        query = {
+            "fields": fields.replace(" ", "") if fields else None,
+            "listMeta": "true" if meta else None
+        }
+
+        url = self._graph_endpoint + '/xid/' + quote_plus(node_id) + self._get_query_part(query)
         return self.get(url, token)
 
     def get_account(self, node_id, fields: str = None, meta: bool = None, token: str = None) -> dict:
@@ -611,9 +674,12 @@ class Graphit(AbstractAPI):
         :param token: Optional external token.
         :return: The result payload
         """
-        url = self._iam_endpoint + '/accounts/' + quote_plus(node_id) + (
-            '?fields=' + quote_plus(fields.replace(" ", ""), safe="/,") if fields else ""
-        ) + ('?listMeta=True' if meta else "")
+        query = {
+            "fields": fields.replace(" ", "") if fields else None,
+            "listMeta": "true" if meta else None
+        }
+
+        url = self._iam_endpoint + '/accounts/' + quote_plus(node_id) + self._get_query_part(query)
         return self.get(url, token)
 
     def update_account(self, node_id: str, data: dict, token: str = None) -> dict:
@@ -638,8 +704,12 @@ class Graphit(AbstractAPI):
         :param token: Optional external token.
         :return: The result payload
         """
-        url = self._graph_endpoint + '/' + quote_plus(node_id) + '/values' + (
-            '?from=' + starttime if starttime else "") + ('&to=' + endtime if endtime else "")
+        query = {
+            "from": starttime,
+            "to": endtime
+        }
+
+        url = self._graph_endpoint + '/' + quote_plus(node_id) + '/values' + self._get_query_part(query)
         res = self.get(url, token)
         if 'error' in res:
             return res
@@ -659,6 +729,45 @@ class Graphit(AbstractAPI):
         url = self._graph_endpoint + '/' + quote_plus(node_id) + '/values?synchronous=true'
         data = {"items": items}
         return self.post(url, data, token)
+
+    def get_attachment(self,
+                       node_id: str,
+                       content_id: str = None,
+                       include_deleted: bool = False,
+                       token: str = None) -> Iterator[bytes]:
+        """
+        Graphit REST query API: `GET self._graph_endpoint + '/{id}/content'`
+
+        :param node_id: Id of the attachment node
+        :param content_id: Id of the content within the attachment node. Default is None.
+        :param include_deleted: Whether to be able to access deleted content: Default is False
+        :param token: Optional external token.
+        :return: An Iterator over byte chunks from the response body payload.
+        """
+        query = {
+            "contentId": content_id,
+            "includeDeleted": "true" if include_deleted else None
+        }
+
+        url = self._graph_endpoint + '/' + quote_plus(node_id) + '/content' + self._get_query_part(query)
+        return self.get_binary(url, token)
+
+    def post_attachment(self,
+                        node_id: str,
+                        data: Any,
+                        content_type: str = None,
+                        token: str = None) -> dict:
+        """
+        Graphit REST query API: `POST self._graph_endpoint + '/{id}/content'`
+
+        :param node_id: Id of the attachment node
+        :param data: Data to upload in binary form. Can also be an IO object for streaming.
+        :param content_type: Content-Type for *data*. Defaults to 'application/octet-stream' if left unset.
+        :param token: Optional external token.
+        :return: The result payload
+        """
+        url = self._graph_endpoint + '/' + quote_plus(node_id) + '/content'
+        return self.post_binary(url, data, content_type, token)
 
     def get_identity(self, token: str = None) -> dict:
         """
