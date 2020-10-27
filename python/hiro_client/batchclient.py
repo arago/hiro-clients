@@ -313,7 +313,7 @@ class HiroBatchRunner:
         ogit_id = self.get_vertex_id(attributes, id_key, xid_key)
 
         if ogit_id is None or not ogit_id:
-            raise ValueError(
+            raise SourceValueError(
                 "\"{}\" not found or empty in attributes and cannot be determined by any \"{}\"".format(id_key,
                                                                                                         xid_key))
 
@@ -332,7 +332,7 @@ class HiroBatchRunner:
         """
         attribute = attributes.get(key)
         if not attribute:
-            raise ValueError("{} not found or empty in {}.".format(key, name))
+            raise SourceValueError("\"{}\" not found or empty in \"{}\".".format(key, name))
 
         return attribute
 
@@ -496,6 +496,10 @@ class HiroBatchRunner:
         except RequestException as error:
             message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
             yield message, error.response.status_code
+
+        except SourceValueError as error:
+            message = self.error_message(self.entity, self.action, error, attributes, 400)
+            yield message, 400
 
         except Exception as error:
             message = self.error_message(self.entity, self.action, error, attributes, 500)
@@ -755,7 +759,7 @@ class AddAttachmentRunner(HiroBatchRunner):
                                                    data=data,
                                                    content_type=mimetype)
         else:
-            raise ValueError('"data" not found or empty in "attributes._content_data".')
+            raise SourceValueError('"data" not found or empty in "attributes._content_data".')
 
 
 class CreateEdgesFromSessionRunner(CreateEdgesRunner):
@@ -793,9 +797,15 @@ class CreateEdgesFromSessionRunner(CreateEdgesRunner):
 
                     message = self.success_message(self.entity, self.action, response)
                     yield message, 200
+
                 except RequestException as error:
                     message = self.error_message(self.entity, self.action, error, edge, error.response.status_code)
                     yield message, error.response.status_code
+
+                except SourceValueError as error:
+                    message = self.error_message(self.entity, self.action, error, edge, 400)
+                    yield message, 400
+
                 except Exception as error:
                     message = self.error_message(self.entity, self.action, error, edge, 500)
                     yield message, 500
@@ -823,9 +833,15 @@ class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
 
                 message = self.success_message(self.entity, self.action, response)
                 yield message, 200
+
             except RequestException as error:
                 message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
                 yield message, error.response.status_code
+
+            except SourceValueError as error:
+                message = self.error_message(self.entity, self.action, error, attributes, 400)
+                yield message, 400
+
             except Exception as error:
                 message = self.error_message(self.entity, self.action, error, attributes, 500)
                 yield message, 500
@@ -1093,7 +1109,7 @@ class GraphitBatch:
                     sub_result, sub_code = HiroBatchRunner.error_message(
                         Entity.UNDEFINED,
                         Action.UNDEFINED,
-                        RuntimeError("No such command \"{}\".".format(command)),
+                        SourceValueError("No such command \"{}\".".format(command)),
                         attributes,
                         400), 400
 
@@ -1102,3 +1118,10 @@ class GraphitBatch:
         if handle_session_data:
             yield from CreateEdgesFromSessionRunner(session, self.connection).run_from_session()
             yield from CreateAttachmentsFromSessionRunner(session, self.connection).run_from_session()
+
+
+class SourceValueError(ValueError):
+    """
+    An error occurred with missing or invalid source data.
+    """
+    pass
