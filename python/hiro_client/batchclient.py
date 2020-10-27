@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional, Tuple, Any, Iterator, IO
 
 from hiro_client.client import Graphit
+from requests.exceptions import RequestException
 
 
 class Result(Enum):
@@ -436,7 +437,11 @@ class HiroBatchRunner:
         }
 
     @staticmethod
-    def error_message(entity: Entity, action: Action, error: Exception, original: dict) -> dict:
+    def error_message(entity: Entity,
+                      action: Action,
+                      error: Exception,
+                      original: dict,
+                      status_code: int = None) -> dict:
         """
         Failure message format
 
@@ -457,6 +462,7 @@ class HiroBatchRunner:
         :param action: Action done
         :param error: The exception raised
         :param original: The data that lead to the exception
+        :param status_code: HTTP status code if available
         :return: The message
         """
         return {
@@ -465,6 +471,7 @@ class HiroBatchRunner:
             "action": action.value,
             "data": {
                 "error": error.__class__.__name__,
+                "code": status_code,
                 "message": str(error),
                 "original_data": original
             }
@@ -478,16 +485,21 @@ class HiroBatchRunner:
         the *attributes* is defined in derived ...Runner-classes.
 
         :param attributes: Dict with attributes to handle in HIRO.
-        :return: An iterator for a tuple of a result and a status code: 200 everything succeeded, 207 some failures.
+        :return: An iterator for a tuple of a result and a HTTP status code.
         """
         try:
             response: dict = self.run_item(attributes)
 
             message = self.success_message(self.entity, self.action, response)
             yield message, 200
+
+        except RequestException as error:
+            message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
+            yield message, error.response.status_code
+
         except Exception as error:
-            message = self.error_message(self.entity, self.action, error, attributes)
-            yield message, 207
+            message = self.error_message(self.entity, self.action, error, attributes, 500)
+            yield message, 500
 
     @abstractmethod
     def run_item(self, attributes: dict) -> dict:
@@ -781,9 +793,12 @@ class CreateEdgesFromSessionRunner(CreateEdgesRunner):
 
                     message = self.success_message(self.entity, self.action, response)
                     yield message, 200
+                except RequestException as error:
+                    message = self.error_message(self.entity, self.action, error, edge, error.response.status_code)
+                    yield message, error.response.status_code
                 except Exception as error:
-                    message = self.error_message(self.entity, self.action, error, edge)
-                    yield message, 207
+                    message = self.error_message(self.entity, self.action, error, edge, 500)
+                    yield message, 500
 
 
 class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
@@ -808,9 +823,12 @@ class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
 
                 message = self.success_message(self.entity, self.action, response)
                 yield message, 200
+            except RequestException as error:
+                message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
+                yield message, error.response.status_code
             except Exception as error:
-                message = self.error_message(self.entity, self.action, error, attributes)
-                yield message, 207
+                message = self.error_message(self.entity, self.action, error, attributes, 500)
+                yield message, 500
 
 
 class GraphitBatch:
@@ -916,8 +934,7 @@ class GraphitBatch:
 
         :param attributes: Dict containing the attributes for the vertex.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -933,8 +950,7 @@ class GraphitBatch:
 
         :param attributes: Dict containing the attributes for the vertex.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -948,8 +964,7 @@ class GraphitBatch:
 
         :param attributes: Dict containing the attributes for the vertex.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -964,8 +979,7 @@ class GraphitBatch:
 
         :param attributes: Dict containing the attributes for the vertex.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -980,8 +994,7 @@ class GraphitBatch:
 
         :param attributes: Dict containing the fields "from:...,verb,to:..." for the edge.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -997,8 +1010,7 @@ class GraphitBatch:
 
         :param attributes: Dict containing the "from:...,verb,to:..." fields for the edge.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -1012,8 +1024,7 @@ class GraphitBatch:
 
         :param attributes: Contains the timeseries items.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -1040,8 +1051,7 @@ class GraphitBatch:
 
         :param attributes: Contains the attachment data.
         :param session: optional: Persistent data for the current session. Use a local session if this is not set.
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         if not session:
             session = self.__init_session()
@@ -1063,8 +1073,7 @@ class GraphitBatch:
         with payload being a list of dict containing the attributes to run with that command.
 
         :param command_iter: An iterator for a dict of pairs "[command]:payload".
-        :return: Iterator of a tuple containing the result and a status code 200 when everything went fine or 207 when
-                 some errors occurred.
+        :return: Iterator of a tuple containing the result and a HTTP status code.
         """
         session = self.__init_session()
 
@@ -1085,7 +1094,8 @@ class GraphitBatch:
                         Entity.UNDEFINED,
                         Action.UNDEFINED,
                         RuntimeError("No such command \"{}\".".format(command)),
-                        attributes), 207
+                        attributes,
+                        400), 400
 
                     yield sub_result, sub_code
 
