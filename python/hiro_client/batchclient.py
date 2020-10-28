@@ -494,8 +494,13 @@ class HiroBatchRunner:
             yield message, 200
 
         except RequestException as error:
-            message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
-            yield message, error.response.status_code
+            response_code = error.response.status_code if error.response else 999
+            message = self.error_message(self.entity,
+                                         self.action,
+                                         error,
+                                         attributes,
+                                         response_code)
+            yield message, response_code
 
         except SourceValueError as error:
             message = self.error_message(self.entity, self.action, error, attributes, 400)
@@ -799,8 +804,13 @@ class CreateEdgesFromSessionRunner(CreateEdgesRunner):
                     yield message, 200
 
                 except RequestException as error:
-                    message = self.error_message(self.entity, self.action, error, edge, error.response.status_code)
-                    yield message, error.response.status_code
+                    response_code = error.response.status_code if error.response else 999
+                    message = self.error_message(self.entity,
+                                                 self.action,
+                                                 error,
+                                                 edge,
+                                                 response_code)
+                    yield message, response_code
 
                 except SourceValueError as error:
                     message = self.error_message(self.entity, self.action, error, edge, 400)
@@ -835,8 +845,13 @@ class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
                 yield message, 200
 
             except RequestException as error:
-                message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
-                yield message, error.response.status_code
+                response_code = error.response.status_code if error.response else 999
+                message = self.error_message(self.entity,
+                                             self.action,
+                                             error,
+                                             attributes,
+                                             response_code)
+                yield message, response_code
 
             except SourceValueError as error:
                 message = self.error_message(self.entity, self.action, error, attributes, 400)
