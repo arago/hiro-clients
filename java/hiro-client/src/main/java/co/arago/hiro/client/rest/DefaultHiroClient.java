@@ -50,7 +50,7 @@ public class DefaultHiroClient implements HiroClient {
     }
 
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel,
-                             int timeout) {
+            int timeout) {
         this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, "");
     }
 
@@ -61,7 +61,7 @@ public class DefaultHiroClient implements HiroClient {
 
     // still needed for ClientBuilder => public
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
-                             boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
+            boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
         String apiPath = "";
         String appPath = "";
         String authPath = "";
@@ -531,7 +531,7 @@ public class DefaultHiroClient implements HiroClient {
     @Deprecated
     @Override
     public void getEventStream(Map<String, String> requestParameters, Listener<String> dataListener,
-                               Listener<String> logListener) {
+            Listener<String> logListener) {
         LOG.warning(
                 "HiroClient#getEventStream is deprecated and will be removed without warning. Use Hiro#newClient()#makeWebSocketClient()!");
 
