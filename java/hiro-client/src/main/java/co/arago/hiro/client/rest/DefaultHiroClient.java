@@ -1,18 +1,12 @@
 package co.arago.hiro.client.rest;
 
-import co.arago.hiro.client.api.HiroClient;
-import co.arago.hiro.client.api.LogValue;
-import co.arago.hiro.client.api.TimeseriesValue;
-import co.arago.hiro.client.api.TokenProvider;
-import co.arago.hiro.client.api.WebSocketClient;
+import co.arago.hiro.client.api.*;
 import co.arago.hiro.client.builder.ClientBuilder;
-import co.arago.hiro.client.util.DefaultLogValue;
-import co.arago.hiro.client.util.DefaultTimeseriesValue;
-import co.arago.hiro.client.util.Helper;
-import co.arago.hiro.client.util.HiroCollections;
-import co.arago.hiro.client.util.Listener;
-import co.arago.hiro.client.util.SimpleWsListener;
-import co.arago.hiro.client.util.Throwables;
+import co.arago.hiro.client.util.*;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Response;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,18 +14,14 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
 
-import static co.arago.hiro.client.util.Helper.*;
-import static co.arago.hiro.client.api.RestClient.*;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.HttpClientHelper;
-import java.util.concurrent.ExecutionException;
-import org.asynchttpclient.Response;
+import static co.arago.hiro.client.api.RestClient.DEFAULT_ENCODING;
+import static co.arago.hiro.client.api.RestClient.HEADER_CONTENT_TYPE;
+import static co.arago.hiro.client.util.Helper.notEmpty;
+import static co.arago.hiro.client.util.Helper.notNull;
 
 public class DefaultHiroClient implements HiroClient {
 
@@ -79,6 +69,7 @@ public class DefaultHiroClient implements HiroClient {
         this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
         try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
             final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
+            checkError(r);
             final Map info = Helper.parseJsonBody(r.getResponseBody());
             final String version = (String) ((Map) info.get(API_SUFFIX)).get("version");
             if (!DEFAULT_API_VERSION.split("\\.")[0].equals(version.split("\\.")[0])) {
@@ -134,6 +125,20 @@ public class DefaultHiroClient implements HiroClient {
 
         LOG.setLevel(this.debugLevel);
 
+    }
+
+    private static void checkError(Response r) throws HiroException {
+        if (r.hasResponseStatus() && r.getStatusCode() >= 400) {
+            if (r.hasResponseBody()) {
+                final Map info = Helper.parseJsonBody(r.getResponseBody());
+                Map error = (Map) info.get("error");
+                if (error != null) {
+                    throw new HiroException(String.valueOf(error.get("message")), r.getStatusCode());
+                }
+            }
+
+            throw new HiroException(r.getStatusText(), r.getStatusCode());
+        }
     }
 
     @Override
