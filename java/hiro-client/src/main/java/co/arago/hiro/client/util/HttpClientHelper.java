@@ -1,15 +1,12 @@
 package co.arago.hiro.client.util;
 
+import org.asynchttpclient.*;
+import org.asynchttpclient.proxy.ProxyServer;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.asynchttpclient.Param;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.Response;
 
 /**
  *
@@ -18,7 +15,7 @@ public final class HttpClientHelper {
     private static final String USERAGENT = "co.arago.hiro.client/" + VersionHelper.version();
     public static Level HTTP_DEBUG_LEVEL = Level.FINEST;
 
-    private static AsyncHttpClient _newClient(boolean trustAllCerts, int timeout) {
+    private static AsyncHttpClient _newClient(boolean trustAllCerts, int timeout, ProxyServer.Builder proxyBuilder) {
         final DefaultAsyncHttpClientConfig.Builder builder = new DefaultAsyncHttpClientConfig.Builder();
 
         if (trustAllCerts) {
@@ -36,15 +33,23 @@ public final class HttpClientHelper {
         // builder.setHandshakeTimeout(timeout)
         // builder.setShutdownTimeout(timeout)
 
+        if (proxyBuilder != null) {
+            builder.setProxyServer(proxyBuilder);
+        }
+
         return new DefaultAsyncHttpClient(builder.build());
     }
 
     public static AsyncHttpClient newClient(boolean trustAllCerts) {
-        return _newClient(trustAllCerts, 0);
+        return _newClient(trustAllCerts, 0, null);
     }
 
     public static AsyncHttpClient newClient(boolean trustAllCerts, int timeout) {
-        return _newClient(trustAllCerts, timeout);
+        return _newClient(trustAllCerts, timeout, null);
+    }
+
+    public static AsyncHttpClient newClient(boolean trustAllCerts, int timeout, ProxyServer.Builder proxyBuilder) {
+        return _newClient(trustAllCerts, timeout, proxyBuilder);
     }
 
     private static void trustAll(DefaultAsyncHttpClientConfig.Builder builder) {
