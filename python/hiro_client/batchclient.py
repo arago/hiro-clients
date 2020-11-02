@@ -44,7 +44,6 @@ class HiroConnection:
         :param token: Optional: Predefined token
         """
         self.client = client
-        self.client.raise_exceptions = True
         self.token = token
 
     def get_node(self, node_id: str, fields: str, meta: bool = None) -> dict:
@@ -494,8 +493,13 @@ class HiroBatchRunner:
             yield message, 200
 
         except RequestException as error:
-            message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
-            yield message, error.response.status_code
+            response_code = error.response.status_code if error.response else 999
+            message = self.error_message(self.entity,
+                                         self.action,
+                                         error,
+                                         attributes,
+                                         response_code)
+            yield message, response_code
 
         except SourceValueError as error:
             message = self.error_message(self.entity, self.action, error, attributes, 400)
@@ -799,8 +803,13 @@ class CreateEdgesFromSessionRunner(CreateEdgesRunner):
                     yield message, 200
 
                 except RequestException as error:
-                    message = self.error_message(self.entity, self.action, error, edge, error.response.status_code)
-                    yield message, error.response.status_code
+                    response_code = error.response.status_code if error.response else 999
+                    message = self.error_message(self.entity,
+                                                 self.action,
+                                                 error,
+                                                 edge,
+                                                 response_code)
+                    yield message, response_code
 
                 except SourceValueError as error:
                     message = self.error_message(self.entity, self.action, error, edge, 400)
@@ -835,8 +844,13 @@ class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
                 yield message, 200
 
             except RequestException as error:
-                message = self.error_message(self.entity, self.action, error, attributes, error.response.status_code)
-                yield message, error.response.status_code
+                response_code = error.response.status_code if error.response else 999
+                message = self.error_message(self.entity,
+                                             self.action,
+                                             error,
+                                             attributes,
+                                             response_code)
+                yield message, response_code
 
             except SourceValueError as error:
                 message = self.error_message(self.entity, self.action, error, attributes, 400)
@@ -879,7 +893,8 @@ class GraphitBatch:
                  client_secret: str = None,
                  auth_endpoint: str = None,
                  iam_endpoint: str = None,
-                 use_xid_cache: bool = True):
+                 use_xid_cache: bool = True,
+                 proxies: dict = None):
         """
         Constructor
 
@@ -896,6 +911,7 @@ class GraphitBatch:
         :param auth_endpoint: optional, required if *hiro_token* is None: URL of the authentication API.
         :param iam_endpoint: optional: URL of the IAM instance for accessing accounts. Default is None.
         :param use_xid_cache: Use xid caching. Default is True when omitted or set to None.
+        :param proxies: Proxy configuration for *requests*. Default is None.
         """
 
         if not graph_endpoint:
@@ -921,13 +937,15 @@ class GraphitBatch:
 
         self.connection = HiroConnection(
             Graphit(
-                username,
-                password,
-                client_id,
-                client_secret,
-                graph_endpoint,
-                auth_endpoint,
-                iam_endpoint
+                username=username,
+                password=password,
+                client_id=client_id,
+                client_secret=client_secret,
+                graph_endpoint=graph_endpoint,
+                auth_endpoint=auth_endpoint,
+                iam_endpoint=iam_endpoint,
+                raise_exceptions=True,
+                proxies=proxies
             ),
             hiro_token
         )

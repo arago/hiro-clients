@@ -7,6 +7,7 @@ import net.minidev.json.JSONValue;
 import org.apache.commons.lang.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.proxy.ProxyServer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,28 +47,29 @@ public class DefaultHiroClient implements HiroClient {
     private final Map apiVersionInfo;
 
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel) {
-        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, ""); // timeout=0 means no setting/default
+        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, "", null); // timeout=0 means no
+        // setting/default
     }
 
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts, Level debugLevel,
             int timeout) {
-        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, "");
+        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, "", null);
     }
 
     // if client is set then trustAllCerts and timeout are already set
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client, Level debugLevel) {
-        this(restApiUrl, tokenProvider, client, false, debugLevel, 0, ""); // timeout=0 means no setting/default
+        this(restApiUrl, tokenProvider, client, false, debugLevel, 0, "", null); // timeout=0 means no setting/default
     }
 
     // still needed for ClientBuilder => public
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
-            boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
+            boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion, ProxyServer.Builder proxyBuilder) {
         String apiPath = "";
         String appPath = "";
         String authPath = "";
         apiVersionInfo = HiroCollections.newMap();
         this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
-        try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
+        try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0, proxyBuilder)) {
             final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
             checkError(r);
             final Map info = Helper.parseJsonBody(r.getResponseBody());

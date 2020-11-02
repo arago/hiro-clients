@@ -104,9 +104,6 @@ class TokenInfo:
 
 
 class AbstractAPI:
-    __raise_exceptions: bool = False
-    """Use res._check_status_error() to generate exceptions on http errors"""
-
     def __init__(self,
                  username: str,
                  password: str,
@@ -115,7 +112,8 @@ class AbstractAPI:
                  graph_endpoint: str,
                  auth_endpoint: str,
                  iam_endpoint: str = None,
-                 raise_exceptions: bool = False):
+                 raise_exceptions: bool = False,
+                 proxies: dict = None):
         """
         Constructor
 
@@ -127,6 +125,7 @@ class AbstractAPI:
         :param auth_endpoint: Full url for auth
         :param iam_endpoint: Full url for IAM access (optional)
         :param raise_exceptions: Raise exceptions on HTTP status codes that denote an error. Default is False.
+        :param proxies: Proxy configuration for *requests*. Default is None.
         """
         self._headers = {'Content-type': 'application/json',
                          'Accept': 'text/plain, application/json'
@@ -139,25 +138,8 @@ class AbstractAPI:
         self._graph_endpoint = graph_endpoint
         self._auth_endpoint = auth_endpoint
         self._iam_endpoint = iam_endpoint
-        self.raise_exceptions = raise_exceptions
-
-    @property
-    def raise_exceptions(self) -> bool:
-        """
-        Use res._check_status_error() to generate exceptions on http errors
-
-        :return: self.__raise_exceptions
-        """
-        return self.__raise_exceptions
-
-    @raise_exceptions.setter
-    def raise_exceptions(self, enable: bool) -> None:
-        """
-        Use res._check_status_error() to generate exceptions on http errors
-
-        :param enable: The value to set.
-        """
-        self.__raise_exceptions = enable
+        self._proxies = proxies
+        self._raise_exceptions = raise_exceptions
 
     ###############################################################################################################
     # Basic requests
@@ -175,7 +157,8 @@ class AbstractAPI:
         with requests.get(url,
                           headers=self._get_headers(token, content=False),
                           verify=False,
-                          stream=True) as res:
+                          stream=True,
+                          proxies=self._get_proxies()) as res:
             self._check_response(res, token)
 
             yield from res.iter_content(chunk_size=65536)
@@ -196,7 +179,8 @@ class AbstractAPI:
         res = requests.post(url,
                             data=data,
                             headers=headers,
-                            verify=False)
+                            verify=False,
+                            proxies=self._get_proxies())
         return self._parse_json_response(res, token)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
@@ -210,7 +194,8 @@ class AbstractAPI:
         """
         res = requests.get(url,
                            headers=self._get_headers(token, content=False),
-                           verify=False)
+                           verify=False,
+                           proxies=self._get_proxies())
         return self._parse_json_response(res, token)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
@@ -226,7 +211,8 @@ class AbstractAPI:
         res = requests.post(url,
                             json=data,
                             headers=self._get_headers(token, content=True),
-                            verify=False)
+                            verify=False,
+                            proxies=self._get_proxies())
         return self._parse_json_response(res, token)
 
     @backoff.on_exception(*BACKOFF_ARGS, **BACKOFF_KWARGS)
@@ -240,12 +226,21 @@ class AbstractAPI:
         """
         res = requests.delete(url,
                               headers=self._get_headers(token, content=False),
-                              verify=False)
+                              verify=False,
+                              proxies=self._get_proxies())
         return self._parse_json_response(res, token)
 
     ###############################################################################################################
     # Tool methods for requests
     ###############################################################################################################
+
+    def _get_proxies(self) -> dict:
+        """
+        Create a copy of proxies if they exists or return None
+
+        :return: copy of self._proxies or None
+        """
+        return self._proxies.copy() if self._proxies else None
 
     def _get_headers(self, token: str, content: bool = True) -> dict:
         """
@@ -301,7 +296,7 @@ class AbstractAPI:
         :raises requests.exceptions.HTTPError: When an HTTPError occurred.
         """
         try:
-            if self.raise_exceptions:
+            if self._raise_exceptions:
                 res.raise_for_status()
         except requests.exceptions.HTTPError as err:
             http_error_msg = str(err.args[0])
@@ -365,7 +360,8 @@ class TokenHandler(AbstractAPI):
                          caller._graph_endpoint,
                          caller._auth_endpoint,
                          caller._iam_endpoint,
-                         caller.raise_exceptions)
+                         caller._raise_exceptions,
+                         caller._proxies)
 
     def get_token(self, token_info: TokenInfo) -> None:
         """
@@ -456,7 +452,8 @@ class Graphit(AbstractAPI):
                  graph_endpoint: str,
                  auth_endpoint: str,
                  iam_endpoint: str = None,
-                 raise_exceptions: bool = False):
+                 raise_exceptions: bool = False,
+                 proxies: dict = None):
         """
         Constructor
 
@@ -468,6 +465,7 @@ class Graphit(AbstractAPI):
         :param auth_endpoint: Full url for auth
         :param iam_endpoint: Full url for IAM access (optional)
         :param raise_exceptions: Raise exceptions on HTTP status codes that denote an error. Default is False
+        :param proxies: Proxy configuration for *requests*. Default is None.
         """
         super().__init__(username,
                          password,
@@ -476,7 +474,8 @@ class Graphit(AbstractAPI):
                          graph_endpoint,
                          auth_endpoint,
                          iam_endpoint,
-                         raise_exceptions)
+                         raise_exceptions,
+                         proxies)
 
         self._token_info = TokenInfo()
 

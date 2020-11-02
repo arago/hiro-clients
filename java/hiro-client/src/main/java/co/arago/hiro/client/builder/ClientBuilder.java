@@ -11,6 +11,7 @@ import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Listener;
 import co.arago.hiro.client.util.Throwables;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.ws.WebSocketListener;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class ClientBuilder {
     protected int timeout = 0; // msecs
     protected String apiVersion = null; // enforce /api/<vers>/graph
     protected List<Map> eventFilterMessages;
+    protected ProxyServer.Builder proxyBuilder;
 
     public enum WebsocketType {
         Graph, Event, Action
@@ -76,6 +78,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder setProxyBuilder(ProxyServer.Builder proxyBuilder) {
+        this.proxyBuilder = proxyBuilder;
+        return this;
+    }
+
     public ClientBuilder setApiVersion(String version) {
         this.apiVersion = version;
         return this;
@@ -88,7 +95,7 @@ public class ClientBuilder {
 
     public HiroClient makeHiroClient() {
         return new DefaultHiroClient(notEmpty(restApiUrl, "restApiUrl"), notNull(tokenProvider, "tokenProvider"),
-                client, trustAllCerts, debugLevel, timeout, apiVersion);
+                client, trustAllCerts, debugLevel, timeout, apiVersion, proxyBuilder);
     }
 
     public RestClient makeRestClient() {
