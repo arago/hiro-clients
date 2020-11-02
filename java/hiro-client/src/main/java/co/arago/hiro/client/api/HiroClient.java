@@ -1,6 +1,7 @@
 package co.arago.hiro.client.api;
 
 import co.arago.hiro.client.util.Listener;
+
 import java.io.Closeable;
 import java.io.InputStream;
 import java.util.List;
@@ -185,4 +186,5 @@ public interface HiroClient extends Closeable {
     default List<Map> meTeams() {
         return meTeams(false);
     }
+
 }

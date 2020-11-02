@@ -5,11 +5,12 @@ import co.arago.hiro.client.auth.DeviceTokenProvider;
 import co.arago.hiro.client.auth.FixedTokenProvider;
 import co.arago.hiro.client.auth.PasswordTokenProvider;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.proxy.ProxyServer;
 
-import static co.arago.hiro.client.util.Helper.notEmpty;
 import java.util.logging.Level;
 
 import static co.arago.hiro.client.auth.AbstractTokenProvider.DEFAULT_API_VERSION;
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *
@@ -20,6 +21,8 @@ public final class TokenBuilder {
     private boolean trustAllCerts;
     private Level debugLevel = Level.OFF;
     private String apiVersion = DEFAULT_API_VERSION;
+    private ProxyServer.Builder proxyBuilder;
+    private int timeout = 0; // msecs
 
     public TokenBuilder setClient(AsyncHttpClient client) {
         this.client = client;
@@ -45,6 +48,16 @@ public final class TokenBuilder {
         return this;
     }
 
+    public TokenBuilder setProxyBuilder(ProxyServer.Builder proxyBuilder) {
+        this.proxyBuilder = proxyBuilder;
+        return this;
+    }
+
+    public TokenBuilder setTimeout(int timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
     public TokenProvider makeFixed(String token) {
         return new FixedTokenProvider(notEmpty(token, "token"));
     }
@@ -53,14 +66,14 @@ public final class TokenBuilder {
             String password) {
         return new PasswordTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel,
                 notEmpty(clientId, "clientId"), notEmpty(clientSecret, "clientSecret"), notEmpty(userName, "userName"),
-                notEmpty(password, "password"), notEmpty(apiVersion, "apiVErsion"));
+                notEmpty(password, "password"), notEmpty(apiVersion, "apiVersion"), timeout, proxyBuilder);
     }
 
     public TokenProvider makeDevice(String url, String appId, String appSecret, String deviceId, String deviceSecret) {
         // NOTE: we do not pass apiVersion (device stuff has separate versioning)
         return new DeviceTokenProvider(notEmpty(url, "url"), client, trustAllCerts, debugLevel,
                 notEmpty(appId, "appId"), notEmpty(appSecret, "appSecret"), notEmpty(deviceId, "deviceId"),
-                notEmpty(deviceSecret, "deviceSecret"));
+                notEmpty(deviceSecret, "deviceSecret"), null, timeout, proxyBuilder);
     }
 
 }

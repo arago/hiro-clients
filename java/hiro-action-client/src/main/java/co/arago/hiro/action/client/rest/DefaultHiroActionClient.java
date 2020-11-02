@@ -3,23 +3,25 @@ package co.arago.hiro.action.client.rest;
 import co.arago.hiro.action.client.api.HiroActionClient;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.rest.AuthenticatedRestClient;
-import static co.arago.hiro.client.rest.DefaultHiroClient.API_PREFIX;
 import co.arago.hiro.client.util.Helper;
 import co.arago.hiro.client.util.HiroCollections;
+import co.arago.hiro.client.util.HiroException;
+import co.arago.hiro.client.util.HttpClientHelper;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.proxy.ProxyServer;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
-
-import static co.arago.hiro.client.util.Helper.*;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.HttpClientHelper;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.asynchttpclient.Response;
+
+import static co.arago.hiro.client.rest.DefaultHiroClient.API_PREFIX;
+import static co.arago.hiro.client.util.Helper.notNull;
 
 public class DefaultHiroActionClient implements HiroActionClient {
 
@@ -28,13 +30,18 @@ public class DefaultHiroActionClient implements HiroActionClient {
 
     public DefaultHiroActionClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts,
             Level debugLevel) {
-        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, null);
+        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, null, null);
     }
 
     public DefaultHiroActionClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
             boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion) {
+        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, null, null);
+    }
+
+    public DefaultHiroActionClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
+            boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion, ProxyServer.Builder proxyBuilder) {
         String apiPath = "";
-        try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0)) {
+        try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0, proxyBuilder)) {
             if (apiVersion != null && !apiVersion.isEmpty()) {
                 apiPath = StringUtils.join(
                         HiroCollections.newList(HiroActionClient.PATH[0], apiVersion, HiroActionClient.PATH[2]), "/");
@@ -42,6 +49,7 @@ public class DefaultHiroActionClient implements HiroActionClient {
                 try {
                     final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute()
                             .get();
+                    AuthenticatedRestClient.checkResponse(r);
                     final String version = (String) ((Map) Helper.parseJsonBody(r.getResponseBody())
                             .get(HiroActionClient.PATH[1])).get("version");
                     if (!HiroActionClient.PATH[2].split("\\.")[0].equals(version.split("\\.")[0])) {

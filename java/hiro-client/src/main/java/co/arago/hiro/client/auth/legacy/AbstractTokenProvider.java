@@ -1,20 +1,23 @@
 package co.arago.hiro.client.auth.legacy;
 
 import co.arago.hiro.client.api.TokenProvider;
-import static co.arago.hiro.client.util.Helper.notEmpty;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Throwables;
+import net.minidev.json.JSONValue;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.proxy.ProxyServer;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.Response;
+
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *
@@ -51,10 +54,15 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
     public AbstractTokenProvider(String url, String clientId, String clientSecret, AsyncHttpClient client,
             boolean trustAllCerts, Level debugLevel) {
+        this(url, clientId, clientSecret, client, trustAllCerts, debugLevel, 0, null);
+    }
+
+    public AbstractTokenProvider(String url, String clientId, String clientSecret, AsyncHttpClient client,
+            boolean trustAllCerts, Level debugLevel, int timeout, ProxyServer.Builder proxyBuilder) {
         this.url = notEmpty(url, "url");
         this.clientId = notEmpty(clientId, "clientId");
         this.clientSecret = notEmpty(clientSecret, "clientSecret");
-        this.client = client == null ? HttpClientHelper.newClient(trustAllCerts) : client;
+        this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, timeout, proxyBuilder) : client;
         if (debugLevel != null && !Level.OFF.equals(debugLevel)) {
             this.debugRest = true;
             this.debugRestLevel = debugLevel;
