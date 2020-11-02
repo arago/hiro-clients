@@ -115,7 +115,7 @@ public class ClientBuilder {
     public WebSocketClient makeWebSocketClient(WebsocketType type, String urlParameters, Listener<String> dataListener,
             Listener<String> logListener, WebSocketListener handler) {
         if (client == null) {
-            client = HttpClientHelper.newClient(trustAllCerts, this.timeout);
+            client = HttpClientHelper.newClient(trustAllCerts, this.timeout, this.proxyBuilder);
         }
 
         try {

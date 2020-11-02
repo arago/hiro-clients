@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpHeaders;
 import net.minidev.json.JSONValue;
 import org.asynchttpclient.*;
+import org.asynchttpclient.proxy.ProxyServer;
 import org.jsfr.json.*;
 
 import java.io.IOException;
@@ -41,28 +42,34 @@ public class AuthenticatedRestClient implements RestClient {
 
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts,
             Level debugLevel) {
-        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, null);
+        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, 0, null, null);
     }
 
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, boolean trustAllCerts,
             Level debugLevel, int timeout) {
-        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, null);
+        this(restApiUrl, tokenProvider, null, trustAllCerts, debugLevel, timeout, null, null);
     }
 
     // if client is set then trustAllCerts and timeout are already set
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
             Level debugLevel) {
-        this(restApiUrl, tokenProvider, client, false, debugLevel, 0, null);
+        this(restApiUrl, tokenProvider, client, false, debugLevel, 0, null, null);
     }
 
     // still needed for ClientBuilder => public
     public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
             boolean trustAllCerts, Level debugLevel, int timeout, String apiPath) {
+        this(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel, timeout, apiPath, null);
+    }
+
+    // With added proxy support
+    public AuthenticatedRestClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
+            boolean trustAllCerts, Level debugLevel, int timeout, String apiPath, ProxyServer.Builder proxyBuilder) {
         this.timeout = timeout > 0 ? timeout : TIMEOUT;
         this.restApiUrl = notEmpty(restApiUrl, "restApiUrl").endsWith("/")
                 ? restApiUrl.substring(0, restApiUrl.length() - 1) : restApiUrl;
         this.clientIsProvided = client != null;
-        this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, this.timeout) : client;
+        this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, this.timeout, proxyBuilder) : client;
         this.debugRestLevel = debugLevel != null ? debugLevel : Level.OFF;
         LOG.setLevel(this.debugRestLevel);
         this.tokenProvider = notNull(tokenProvider, "tokenProvider");
@@ -392,7 +399,7 @@ public class AuthenticatedRestClient implements RestClient {
         }
     }
 
-    private static Response checkResponse(Response response) throws Exception {
+    public static Response checkResponse(Response response) throws HiroException {
 
         final int status = response.getStatusCode();
 
@@ -400,7 +407,7 @@ public class AuthenticatedRestClient implements RestClient {
             return response;
         } else {
             throw new HiroException(tryUnwrap(response.getResponseBody(), response.getStatusText()), status,
-                    isEmpty(response.getResponseBody()) ? null : JSONValue.parse(response.getResponseBody()));
+                    response.hasResponseBody() ? JSONValue.parse(response.getResponseBody()) : null);
         }
     }
 

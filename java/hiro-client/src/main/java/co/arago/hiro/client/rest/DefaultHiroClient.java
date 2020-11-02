@@ -71,7 +71,7 @@ public class DefaultHiroClient implements HiroClient {
         this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
         try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0, proxyBuilder)) {
             final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
-            checkError(r);
+            AuthenticatedRestClient.checkResponse(r);
             final Map info = Helper.parseJsonBody(r.getResponseBody());
             final String version = (String) ((Map) info.get(API_SUFFIX)).get("version");
             if (!DEFAULT_API_VERSION.split("\\.")[0].equals(version.split("\\.")[0])) {
@@ -127,20 +127,6 @@ public class DefaultHiroClient implements HiroClient {
 
         LOG.setLevel(this.debugLevel);
 
-    }
-
-    private static void checkError(Response r) throws HiroException {
-        if (r.hasResponseStatus() && r.getStatusCode() >= 400) {
-            if (r.hasResponseBody()) {
-                final Map info = Helper.parseJsonBody(r.getResponseBody());
-                Map error = (Map) info.get("error");
-                if (error != null) {
-                    throw new HiroException(String.valueOf(error.get("message")), r.getStatusCode());
-                }
-            }
-
-            throw new HiroException(r.getStatusText(), r.getStatusCode());
-        }
     }
 
     @Override

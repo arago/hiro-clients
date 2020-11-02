@@ -6,6 +6,13 @@ import co.arago.hiro.client.util.HiroCollections;
 import co.arago.hiro.client.util.HiroException;
 import co.arago.hiro.client.util.HttpClientHelper;
 import co.arago.hiro.client.util.Throwables;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.proxy.ProxyServer;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
@@ -13,13 +20,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.Response;
 
-import static co.arago.hiro.client.util.Helper.*;
+import static co.arago.hiro.client.util.Helper.notEmpty;
 
 /**
  *
@@ -54,16 +56,21 @@ public abstract class AbstractTokenProvider implements TokenProvider, Closeable 
 
     public AbstractTokenProvider(String url, String clientId, String clientSecret, AsyncHttpClient client,
             boolean trustAllCerts) {
-        this(url, clientId, clientSecret, client, trustAllCerts, null, null);
+        this(url, clientId, clientSecret, client, trustAllCerts, null, null, 0, null);
     }
 
     public AbstractTokenProvider(String url, String clientId, String clientSecret, AsyncHttpClient client,
             boolean trustAllCerts, Level debugLevel, String apiVersion) {
+        this(url, clientId, clientSecret, client, trustAllCerts, debugLevel, apiVersion, 0, null);
+    }
+
+    public AbstractTokenProvider(String url, String clientId, String clientSecret, AsyncHttpClient client,
+            boolean trustAllCerts, Level debugLevel, String apiVersion, int timeout, ProxyServer.Builder proxyBuilder) {
         this.url = notEmpty(url, "url").replaceAll("/+$", "");
         this.clientId = notEmpty(clientId, "clientId");
         this.clientSecret = notEmpty(clientSecret, "clientSecret");
         this.clientIsProvided = client != null;
-        this.client = client == null ? HttpClientHelper.newClient(trustAllCerts) : client;
+        this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, timeout, proxyBuilder) : client;
         if (debugLevel != null) {
             LOG.setLevel(debugLevel);
         }
