@@ -22,7 +22,7 @@ class Entity(Enum):
     UNDEFINED = "undefined"
     VERTEX = "vertex"
     EDGE = "edge"
-    TIMESERIES = "timeseries",
+    TIMESERIES = "timeseries"
     ATTACHMENT = "attachment"
 
 
