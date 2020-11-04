@@ -22,7 +22,7 @@ class Entity(Enum):
     UNDEFINED = "undefined"
     VERTEX = "vertex"
     EDGE = "edge"
-    TIMESERIES = "timeseries",
+    TIMESERIES = "timeseries"
     ATTACHMENT = "attachment"
 
 
@@ -493,7 +493,7 @@ class HiroBatchRunner:
             yield message, 200
 
         except RequestException as error:
-            response_code = error.response.status_code if error.response else 999
+            response_code = error.response.status_code if error.response is not None else 999
             message = self.error_message(self.entity,
                                          self.action,
                                          error,
@@ -803,7 +803,7 @@ class CreateEdgesFromSessionRunner(CreateEdgesRunner):
                     yield message, 200
 
                 except RequestException as error:
-                    response_code = error.response.status_code if error.response else 999
+                    response_code = error.response.status_code if error.response is not None else 999
                     message = self.error_message(self.entity,
                                                  self.action,
                                                  error,
@@ -844,7 +844,7 @@ class CreateAttachmentsFromSessionRunner(AddAttachmentRunner):
                 yield message, 200
 
             except RequestException as error:
-                response_code = error.response.status_code if error.response else 999
+                response_code = error.response.status_code if error.response is not None else 999
                 message = self.error_message(self.entity,
                                              self.action,
                                              error,
