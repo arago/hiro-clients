@@ -2,6 +2,8 @@
 
 HIRO clients holds the official java clients for interacting with the APIs of HIRO (graph, connector, ...).
 
+A client written in Python 3 is available at https://github.com/arago/python-hiro-clients
+
 **Status**
 
 - Technical Preview
