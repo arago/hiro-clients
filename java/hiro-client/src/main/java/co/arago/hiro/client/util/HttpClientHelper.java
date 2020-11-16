@@ -22,6 +22,7 @@ public final class HttpClientHelper {
             trustAll(builder);
         }
 
+        builder.setWebSocketMaxFrameSize(10485760)
         builder.setUserAgent(USERAGENT);
         builder.setMaxRequestRetry(4);
         if (timeout > 0) {
