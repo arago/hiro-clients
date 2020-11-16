@@ -8,8 +8,3 @@ Java
 | 2.0.x | master | 7.0.x |
 | 2.2.x | master | 7.1.x |
 
-Python
-
-| Library version | Branch | HIRO (platform) Version | 
-| --------------- | ------ | ----------------------- |
-| 2.3.x | master | 7.1.x |
