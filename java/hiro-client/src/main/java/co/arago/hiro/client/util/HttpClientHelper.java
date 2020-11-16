@@ -13,9 +13,11 @@ import java.util.logging.Logger;
  */
 public final class HttpClientHelper {
     private static final String USERAGENT = "co.arago.hiro.client/" + VersionHelper.version();
+    private static final int DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE = 10485760;
     public static Level HTTP_DEBUG_LEVEL = Level.FINEST;
 
-    private static AsyncHttpClient _newClient(boolean trustAllCerts, int timeout, ProxyServer.Builder proxyBuilder) {
+    private static AsyncHttpClient _newClient(boolean trustAllCerts, int timeout, ProxyServer.Builder proxyBuilder,
+            int webSocketMaxFrame) {
         final DefaultAsyncHttpClientConfig.Builder builder = new DefaultAsyncHttpClientConfig.Builder();
 
         if (trustAllCerts) {
@@ -37,19 +39,26 @@ public final class HttpClientHelper {
             builder.setProxyServer(proxyBuilder);
         }
 
+        builder.setWebSocketMaxFrameSize(webSocketMaxFrame);
+
         return new DefaultAsyncHttpClient(builder.build());
     }
 
     public static AsyncHttpClient newClient(boolean trustAllCerts) {
-        return _newClient(trustAllCerts, 0, null);
+        return _newClient(trustAllCerts, 0, null, DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE);
     }
 
     public static AsyncHttpClient newClient(boolean trustAllCerts, int timeout) {
-        return _newClient(trustAllCerts, timeout, null);
+        return _newClient(trustAllCerts, timeout, null, DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE);
     }
 
     public static AsyncHttpClient newClient(boolean trustAllCerts, int timeout, ProxyServer.Builder proxyBuilder) {
-        return _newClient(trustAllCerts, timeout, proxyBuilder);
+        return _newClient(trustAllCerts, timeout, proxyBuilder, DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE);
+    }
+
+    public static AsyncHttpClient newClient(boolean trustAllCerts, int timeout, ProxyServer.Builder proxyBuilder,
+            int webSocketMaxFrame) {
+        return _newClient(trustAllCerts, timeout, proxyBuilder, webSocketMaxFrame);
     }
 
     private static void trustAll(DefaultAsyncHttpClientConfig.Builder builder) {
