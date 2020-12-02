@@ -34,7 +34,8 @@ import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 public final class DefaultWebSocketClient implements WebSocketClient {
     private static final long PING_TIMEOUT = 30 * 1000;
     private static final int MAX_RETRIES = 5;
-    public static final String DEFAULT_API_VERSION = "6.1";
+    public static final String EVENT_API_VERSION = "6.2";
+    public static final String GRAPH_API_VERSION = "6.1";
     public static final String ACTION_API_VERSION = "1.0";
     public static final String API_PREFIX = "api";
     private static final Logger LOG = Logger.getLogger(DefaultWebSocketClient.class.getName());
@@ -540,11 +541,11 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
                 switch (type) {
                 case Event:
-                    sb.append("events-ws/" + DEFAULT_API_VERSION);
+                    sb.append("events-ws/" + EVENT_API_VERSION);
                     break;
 
                 case Graph:
-                    sb.append("graph-ws/" + DEFAULT_API_VERSION);
+                    sb.append("graph-ws/" + GRAPH_API_VERSION);
                     break;
 
                 case Action:
