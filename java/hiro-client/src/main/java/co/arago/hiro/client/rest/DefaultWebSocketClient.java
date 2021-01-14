@@ -541,15 +541,15 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
                 switch (type) {
                 case Event:
-                    sb.append("events-ws/" + EVENT_API_VERSION);
+                  sb.append("events-ws/" + EVENT_API_VERSION + "/");
                     break;
 
                 case Graph:
-                    sb.append("graph-ws/" + GRAPH_API_VERSION);
+                  sb.append("graph-ws/" + GRAPH_API_VERSION + "/");
                     break;
 
                 case Action:
-                    sb.append("action-ws/" + ACTION_API_VERSION);
+                  sb.append("action-ws/" + ACTION_API_VERSION + "/");
                     break;
 
                 default:
