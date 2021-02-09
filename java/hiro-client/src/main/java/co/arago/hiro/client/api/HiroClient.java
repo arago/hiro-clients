@@ -59,6 +59,9 @@ public interface HiroClient extends Closeable {
     String URL_PATH_PASSWORD = "password";
     String URL_PATH_TEAMS = "teams";
     String URL_PATH_ROLES = "roles";
+    String URL_PATH_CONFIG = "config";
+    String URL_PATH_MANIFEST = "manifest";
+    String URL_PATH_DESKTOP = "desktop";
 
     String PARAM_QUERY = "query";
     String PARAM_ROOT = "root";
@@ -135,6 +138,18 @@ public interface HiroClient extends Closeable {
     InputStream getContent(String attachmentNodeId);
 
     InputStream getContent(String attachmentNodeId, Map<String, String> requestParameters);
+
+    // app API handling
+
+    Map getApp(String appNodeId, Map<String, String> requestParameters);
+
+    Map getAppConfig(Map<String, String> requestParameters);
+
+    InputStream getAppContent(String appNodeId, String contentPath, Map<String, String> requestParameters);
+
+    Map getAppManifest(String appNodeId, Map<String, String> requestParameters);
+
+    List<Map> getAppDesktopApps(Map<String, String> requestParameters);
 
     // variables handling
     Map setVariable(String name, String description, boolean isTodoVariable);
