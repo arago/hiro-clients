@@ -36,9 +36,12 @@ public class DefaultHiroClient implements HiroClient {
     public static final String AUTH_API_VERSION = "6.2";
     public static final String VAR_API_VERSION = "6";
     public static final String VAR_API_SUFFIX = URL_PATH_VARIABLES;
+    public static final String APP_API_SUFFIX = "app";
+    public static final String APP_API_VERSION = "7.0";
     private final AuthenticatedRestClient restClient;
     private final AuthenticatedRestClient varClient;
     private final AuthenticatedRestClient authClient;
+    private final AuthenticatedRestClient appClient;
     private final TokenProvider tokenProvider;
     private final String restApiUrl;
     private final Level debugLevel;
@@ -65,14 +68,16 @@ public class DefaultHiroClient implements HiroClient {
     public DefaultHiroClient(String restApiUrl, TokenProvider tokenProvider, AsyncHttpClient client,
             boolean trustAllCerts, Level debugLevel, int timeout, String apiVersion, ProxyServer.Builder proxyBuilder) {
         String apiPath = "";
-        String appPath = "";
+        String varPath = "";
         String authPath = "";
+        String appPath = "";
         apiVersionInfo = HiroCollections.newMap();
         this.debugLevel = debugLevel != null ? debugLevel : Level.OFF;
         try (final AsyncHttpClient tempClient = HttpClientHelper.newClient(trustAllCerts, 0, proxyBuilder)) {
             final Response r = tempClient.prepareGet(restApiUrl + "/" + API_PREFIX + "/version").execute().get();
             AuthenticatedRestClient.checkResponse(r);
             final Map info = Helper.parseJsonBody(r.getResponseBody());
+
             final String version = (String) ((Map) info.get(API_SUFFIX)).get("version");
             if (!DEFAULT_API_VERSION.split("\\.")[0].equals(version.split("\\.")[0])) {
                 throw new HiroException("Invalid major api version for " + API_SUFFIX + " expected: "
@@ -80,13 +85,15 @@ public class DefaultHiroClient implements HiroClient {
             }
             apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, version), URL_SEPARATOR);
             apiVersionInfo.put(API_SUFFIX, version);
+
             final String varVersion = (String) ((Map) info.get(VAR_API_SUFFIX)).get("version");
             if (!VAR_API_VERSION.equals(varVersion)) {
                 throw new HiroException("Invalid major api version for " + VAR_API_SUFFIX + " expected: "
                         + VAR_API_VERSION + " found: " + version, 500);
             }
-            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion), URL_SEPARATOR);
+            varPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, varVersion), URL_SEPARATOR);
             apiVersionInfo.put(VAR_API_SUFFIX, varVersion);
+
             final String authVersion = (String) ((Map) info.get(AUTH_API_SUFFIX)).get("version");
             if (!AUTH_API_VERSION.split("\\.")[0].equals(authVersion.split("\\.")[0])) {
                 throw new HiroException("Invalid major api version for " + AUTH_API_SUFFIX + " expected: "
@@ -95,17 +102,33 @@ public class DefaultHiroClient implements HiroClient {
             authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, authVersion),
                     URL_SEPARATOR);
             apiVersionInfo.put(AUTH_API_SUFFIX, authVersion);
+
+            final String appVersion = (String) ((Map) info.get(APP_API_SUFFIX)).get("version");
+            if (!APP_API_VERSION.split("\\.")[0].equals(appVersion.split("\\.")[0])) {
+                throw new HiroException("Invalid major api version for " + APP_API_SUFFIX + " expected: "
+                        + APP_API_VERSION.split("\\.")[0] + " found: " + appVersion.split("\\.")[0], 500);
+            }
+
+            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, appVersion), URL_SEPARATOR);
+            apiVersionInfo.put(APP_API_SUFFIX, appVersion);
+
         } catch (InterruptedException | ExecutionException | IOException ex) {
             LOG.log(this.debugLevel, "api version discovery failed using default", ex);
             apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, DEFAULT_API_VERSION),
                     URL_SEPARATOR);
             apiVersionInfo.put(API_SUFFIX, DEFAULT_API_VERSION);
-            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION),
+
+            varPath = StringUtils.join(HiroCollections.newList(API_PREFIX, VAR_API_SUFFIX, VAR_API_VERSION),
                     URL_SEPARATOR);
             apiVersionInfo.put(VAR_API_SUFFIX, VAR_API_VERSION);
+
             authPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, AUTH_API_VERSION),
                     URL_SEPARATOR);
             apiVersionInfo.put(AUTH_API_SUFFIX, AUTH_API_VERSION);
+
+            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, APP_API_SUFFIX, APP_API_VERSION),
+                    URL_SEPARATOR);
+            apiVersionInfo.put(APP_API_SUFFIX, APP_API_VERSION);
         }
         if (apiVersion != null && !apiVersion.isEmpty()) {
             apiPath = StringUtils.join(HiroCollections.newList(API_PREFIX, API_SUFFIX, apiVersion), URL_SEPARATOR);
@@ -117,9 +140,11 @@ public class DefaultHiroClient implements HiroClient {
         this.restClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
                 timeout, apiPath);
         this.varClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
-                timeout, appPath);
+                timeout, varPath);
         this.authClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
                 timeout, authPath);
+        this.appClient = new AuthenticatedRestClient(restApiUrl, tokenProvider, client, trustAllCerts, debugLevel,
+                timeout, appPath);
         this.tokenProvider = tokenProvider;
         this.restApiUrl = restApiUrl;
         this.timeout = timeout;
@@ -134,6 +159,7 @@ public class DefaultHiroClient implements HiroClient {
         restClient.close();
         varClient.close();
         authClient.close();
+        appClient.close();
     }
 
     @Override
@@ -356,6 +382,37 @@ public class DefaultHiroClient implements HiroClient {
         return restClient.getBinary(
                 HiroCollections.newList(notEmpty(attachmentNodeId, "attachmentNodeId"), URL_PATH_ATTACHMENT),
                 queryParams);
+    }
+
+    @Override
+    public Map getApp(String appNodeId, Map<String, String> requestParameters) {
+        String result = appClient.get(notEmpty(appNodeId, "appNodeId"), requestParameters);
+        return Helper.parseJsonBody(result);
+    }
+
+    @Override
+    public Map getAppConfig(Map<String, String> requestParameters) {
+        String result = appClient.get(URL_PATH_CONFIG, requestParameters);
+        return Helper.parseJsonBody(result);
+    }
+
+    @Override
+    public InputStream getAppContent(String appNodeId, String contentPath, Map<String, String> requestParameters) {
+        return appClient.getBinary(HiroCollections.newList(notEmpty(appNodeId, "appNodeId"), URL_PATH_ATTACHMENT,
+                notEmpty(contentPath, "contentPath")), requestParameters);
+    }
+
+    @Override
+    public Map getAppManifest(String appNodeId, Map<String, String> requestParameters) {
+        String result = appClient.get(HiroCollections.newList(notEmpty(appNodeId, "appNodeId"), URL_PATH_MANIFEST),
+                requestParameters);
+        return Helper.parseJsonBody(result);
+    }
+
+    @Override
+    public List<Map> getAppDesktopApps(Map<String, String> requestParameters) {
+        String result = appClient.get(URL_PATH_DESKTOP, requestParameters);
+        return Helper.parseItemListOfMaps(result);
     }
 
     @Override
