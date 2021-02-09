@@ -4,11 +4,11 @@
   <groupId>co.arago</groupId>
   <artifactId>hiro-action-client</artifactId>
   <name>${project.artifactId}</name>
-  <version>2.2.6-SNAPSHOT</version>
+  <version>2.2.8-SNAPSHOT</version>
   <parent>
     <groupId>co.arago</groupId>
     <artifactId>hiro-client-all</artifactId>
-    <version>2.2.6-SNAPSHOT</version>
+    <version>2.2.8-SNAPSHOT</version>
   </parent>
 
   <properties>
