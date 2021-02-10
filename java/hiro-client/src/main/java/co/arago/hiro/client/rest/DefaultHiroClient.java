@@ -109,7 +109,7 @@ public class DefaultHiroClient implements HiroClient {
                         + APP_API_VERSION.split("\\.")[0] + " found: " + appVersion.split("\\.")[0], 500);
             }
 
-            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, AUTH_API_SUFFIX, appVersion), URL_SEPARATOR);
+            appPath = StringUtils.join(HiroCollections.newList(API_PREFIX, APP_API_SUFFIX, appVersion), URL_SEPARATOR);
             apiVersionInfo.put(APP_API_SUFFIX, appVersion);
 
         } catch (InterruptedException | ExecutionException | IOException ex) {
@@ -386,13 +386,13 @@ public class DefaultHiroClient implements HiroClient {
 
     @Override
     public Map getApp(String appNodeId, Map<String, String> requestParameters) {
-        String result = appClient.get(notEmpty(appNodeId, "appNodeId"), requestParameters);
+        String result = appClient.get(HiroCollections.newList(notEmpty(appNodeId, "appNodeId")), requestParameters);
         return Helper.parseJsonBody(result);
     }
 
     @Override
     public Map getAppConfig(Map<String, String> requestParameters) {
-        String result = appClient.get(URL_PATH_CONFIG, requestParameters);
+        String result = appClient.get(HiroCollections.newList(URL_PATH_CONFIG), requestParameters);
         return Helper.parseJsonBody(result);
     }
 
@@ -411,7 +411,7 @@ public class DefaultHiroClient implements HiroClient {
 
     @Override
     public List<Map> getAppDesktopApps(Map<String, String> requestParameters) {
-        String result = appClient.get(URL_PATH_DESKTOP, requestParameters);
+        String result = appClient.get(HiroCollections.newList(URL_PATH_DESKTOP), requestParameters);
         return Helper.parseItemListOfMaps(result);
     }
 
