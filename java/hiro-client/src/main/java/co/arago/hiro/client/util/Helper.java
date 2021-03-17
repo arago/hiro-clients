@@ -5,12 +5,12 @@
  */
 package co.arago.hiro.client.util;
 
-import net.minidev.json.JSONValue;
-
+import co.arago.hiro.client.api.TimeseriesValue;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.minidev.json.JSONValue;
 
 import static co.arago.hiro.client.api.HiroClient.*;
 
@@ -134,6 +134,21 @@ public class Helper {
         } else {
             throw new RuntimeException("did not find list indicator in JSON response: " + json);
         }
+    }
+
+    public static List<TimeseriesValue> parseItemListOfTimeseriesValue(String json) {
+        Map result = Helper.parseJsonBody(json);
+        final List<TimeseriesValue> tsvList = HiroCollections.newList();
+        if (result.containsKey(JSON_LIST_INDICATOR)) {
+            for (Object o : (List) result.get(JSON_LIST_INDICATOR)) {
+                Map entry = (Map) o;
+                tsvList.add(new DefaultTimeseriesValue((long) entry.get(JSON_TS_TIMESTAMP),
+                        (String) entry.get(JSON_TS_VALUE)));
+            }
+        } else {
+            throw new RuntimeException("Got unexpected response: " + result.toString());
+        }
+        return tsvList;
     }
 
     public static List<Map> parseList(String json) {
