@@ -1,7 +1,6 @@
 package co.arago.hiro.client.api;
 
 import co.arago.hiro.client.util.Listener;
-
 import java.io.Closeable;
 import java.io.InputStream;
 import java.util.List;
@@ -68,6 +67,7 @@ public interface HiroClient extends Closeable {
     String QUERY_TYPE_IDS = "ids";
     String QUERY_TYPE_VERTICES = "vertices";
     String QUERY_TYPE_GREMLIN = "gremlin";
+    String QUERY_TYPE_VALUES = "values";
 
     String QUERY_PARAM_FROM = "from";
     String QUERY_PARAM_TO = "to";
@@ -111,6 +111,8 @@ public interface HiroClient extends Closeable {
     List<Map> idQuery(List<String> vertexIds, Map<String, String> requestParameters);
 
     List<Map> xidQuery(String externalId, Map<String, String> requestParameters);
+
+    List<TimeseriesValue> valuesQuery(String query, Map<String, String> requestParameters);
 
     // get history events of the graph
     void historyEvents(Map<String, String> requestParameters, Listener<Map> listener);

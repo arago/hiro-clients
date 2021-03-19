@@ -1,14 +1,19 @@
 package co.arago.hiro.client.rest;
 
-import co.arago.hiro.client.api.*;
+import co.arago.hiro.client.api.HiroClient;
+import co.arago.hiro.client.api.LogValue;
+import co.arago.hiro.client.api.TimeseriesValue;
+import co.arago.hiro.client.api.TokenProvider;
+import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.builder.ClientBuilder;
-import co.arago.hiro.client.util.*;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Response;
-import org.asynchttpclient.proxy.ProxyServer;
-
+import co.arago.hiro.client.util.DefaultLogValue;
+import co.arago.hiro.client.util.Helper;
+import co.arago.hiro.client.util.HiroCollections;
+import co.arago.hiro.client.util.HiroException;
+import co.arago.hiro.client.util.HttpClientHelper;
+import co.arago.hiro.client.util.Listener;
+import co.arago.hiro.client.util.SimpleWsListener;
+import co.arago.hiro.client.util.Throwables;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -18,11 +23,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.proxy.ProxyServer;
 
-import static co.arago.hiro.client.api.RestClient.DEFAULT_ENCODING;
-import static co.arago.hiro.client.api.RestClient.HEADER_CONTENT_TYPE;
-import static co.arago.hiro.client.util.Helper.notEmpty;
-import static co.arago.hiro.client.util.Helper.notNull;
+import static co.arago.hiro.client.util.Helper.*;
+import static co.arago.hiro.client.api.RestClient.*;
 
 public class DefaultHiroClient implements HiroClient {
 
@@ -252,6 +260,14 @@ public class DefaultHiroClient implements HiroClient {
     }
 
     @Override
+    public List<TimeseriesValue> valuesQuery(String query, Map<String, String> queryParams) {
+        notNull(queryParams, "queryParams").put(PARAM_QUERY, notEmpty(query, "query"));
+        String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_VALUES),
+                Helper.composeJson(queryParams), null);
+        return Helper.parseItemListOfTimeseriesValue(result);
+    }
+
+    @Override
     public List<Object> vertexQueryObject(String query, Map<String, String> queryParams) {
         notNull(queryParams, "queryParams").put(PARAM_QUERY, notEmpty(query, "query"));
         String result = restClient.post(HiroCollections.newList(URL_PATH_QUERY, QUERY_TYPE_VERTICES),
@@ -335,24 +351,13 @@ public class DefaultHiroClient implements HiroClient {
 
     @Override
     public List<TimeseriesValue> getTsValues(String tsNodeId, long from, long to, Map<String, String> queryParams) {
-        List<TimeseriesValue> tsvList = HiroCollections.newList();
         Map<String, String> copyParams = HiroCollections.newMap(queryParams);
         copyParams.put(QUERY_PARAM_FROM, Long.toString(from));
         copyParams.put(QUERY_PARAM_TO, Long.toString(to));
 
-        Map tmpResult = Helper.parseJsonBody(
-                restClient.get(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES), copyParams));
-        // TODO lots of error handling missing:
-        if (tmpResult.containsKey(JSON_LIST_INDICATOR)) {
-            for (Object o : (List) tmpResult.get(JSON_LIST_INDICATOR)) {
-                Map entry = (Map) o;
-                tsvList.add(new DefaultTimeseriesValue((long) entry.get(JSON_TS_TIMESTAMP),
-                        (String) entry.get(JSON_TS_VALUE)));
-            }
-        } else {
-            throw new RuntimeException("Got unexpected response: " + tmpResult.toString());
-        }
-        return tsvList;
+        String result = restClient.get(HiroCollections.newList(notEmpty(tsNodeId, "tsNodeId"), URL_PATH_VALUES),
+                copyParams);
+        return Helper.parseItemListOfTimeseriesValue(result);
     }
 
     @Override
