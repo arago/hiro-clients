@@ -42,7 +42,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     private final String restApiUrl;
     private final Listener<String> logListener;
     private final Listener<String> dataListener;
-    private AsyncHttpClient client;
+    private final AsyncHttpClient client;
     private final TokenProvider tokenProvider;
     private final int timeout;
     private final WebsocketType type;
@@ -113,7 +113,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 handler.onOpen(websocket);
             }
 
-            process(logListener, JSONValue.toJSONString(m));
+            if (logListener != null) {
+                process(logListener, JSONValue.toJSONString(m));
+            }
             doReconnect = true;
             tokenValid = false;
             exitOnClose = false;
@@ -146,7 +148,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 handler.onClose(websocket, code, reason);
             }
 
-            process(logListener, JSONValue.toJSONString(m));
+            if (logListener != null) {
+                process(logListener, JSONValue.toJSONString(m));
+            }
             payloadBuffer.setLength(0);
 
             if (exitOnClose) {
@@ -179,7 +183,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 handler.onError(t);
             }
 
-            process(logListener, JSONValue.toJSONString(m));
+            if (logListener != null) {
+                process(logListener, JSONValue.toJSONString(m));
+            }
 
             if (exitOnError) {
                 exitOnClose = true;
@@ -235,7 +241,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                         } else {
                             exitOnClose = true;
                             doReconnect = false;
-                            process(dataListener, finalPayload);
+                            if (dataListener != null) {
+                                process(dataListener, finalPayload);
+                            }
                         }
                         return;
                     }
@@ -244,7 +252,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 // Token is valid when no error 401 came in.
                 tokenValid = true;
 
-                process(dataListener, finalPayload);
+                if (dataListener != null) {
+                    process(dataListener, finalPayload);
+                }
             }
         }
 
@@ -607,7 +617,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 m.put("message", "ping failed " + t.getMessage());
                 m.put("stack", stacktrace(t));
 
-                process(logListener, JSONValue.toJSONString(m));
+                if (logListener != null) {
+                    process(logListener, JSONValue.toJSONString(m));
+                }
             }
         }
     }
