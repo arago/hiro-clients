@@ -3,11 +3,14 @@ package co.arago.hiro.client.rest;
 import co.arago.hiro.client.api.TokenProvider;
 import co.arago.hiro.client.api.WebSocketClient;
 import co.arago.hiro.client.builder.ClientBuilder.WebsocketType;
-import co.arago.hiro.client.util.Helper;
-import co.arago.hiro.client.util.HiroCollections;
-import co.arago.hiro.client.util.HiroException;
-import co.arago.hiro.client.util.Listener;
-import co.arago.hiro.client.util.Throwables;
+import co.arago.hiro.client.util.*;
+import net.minidev.json.JSONValue;
+import org.apache.commons.lang.StringUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.ws.WebSocket;
+import org.asynchttpclient.ws.WebSocketListener;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -16,20 +19,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minidev.json.JSONValue;
-import org.apache.commons.lang.StringUtils;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.ws.WebSocket;
-import org.asynchttpclient.ws.WebSocketListener;
-import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 public final class DefaultWebSocketClient implements WebSocketClient {
     private static final long PING_TIMEOUT = 30 * 1000;
@@ -49,7 +42,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     private final String restApiUrl;
     private final Listener<String> logListener;
     private final Listener<String> dataListener;
-    private AsyncHttpClient client;
+    private final AsyncHttpClient client;
     private final TokenProvider tokenProvider;
     private final int timeout;
     private final WebsocketType type;
@@ -83,8 +76,14 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         private volatile boolean exitOnError = false;
 
         /**
+         * This buffer collects partial payloads at {@link #onTextFrame(String, boolean, int)} until finalFragment is
+         * true
+         */
+        private final StringBuilder payloadBuffer = new StringBuilder();
+
+        /**
          * Constructor
-         * 
+         *
          * @param isReconnecting
          *            Will be set inside {@link #connect(boolean)}. Set {@link #doReconnect} only if isReconnecting is
          *            false.
@@ -114,7 +113,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 handler.onOpen(websocket);
             }
 
-            process(logListener, JSONValue.toJSONString(m));
+            if (logListener != null) {
+                process(logListener, JSONValue.toJSONString(m));
+            }
             doReconnect = true;
             tokenValid = false;
             exitOnClose = false;
@@ -147,7 +148,10 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 handler.onClose(websocket, code, reason);
             }
 
-            process(logListener, JSONValue.toJSONString(m));
+            if (logListener != null) {
+                process(logListener, JSONValue.toJSONString(m));
+            }
+            payloadBuffer.setLength(0);
 
             if (exitOnClose) {
                 if (running) {
@@ -179,7 +183,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 handler.onError(t);
             }
 
-            process(logListener, JSONValue.toJSONString(m));
+            if (logListener != null) {
+                process(logListener, JSONValue.toJSONString(m));
+            }
 
             if (exitOnError) {
                 exitOnClose = true;
@@ -213,32 +219,43 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 handler.onTextFrame(payload, finalFragment, rsv);
             }
 
-            Object o = JSONValue.parse(payload);
-            if (o instanceof Map && ((Map) o).containsKey("error")) {
-                Map error = (Map) ((Map) o).get("error");
-                if ((int) error.get("code") == 401) {
-                    if (tokenValid) {
-                        try {
-                            tokenValid = false;
-                            tokenProvider.renewToken();
-                            reconnect();
-                        } catch (Throwable t) {
-                            exitOnError = true;
-                            onError(t);
+            payloadBuffer.append(payload);
+
+            if (finalFragment) {
+                String finalPayload = payloadBuffer.toString();
+                payloadBuffer.setLength(0);
+
+                Object o = JSONValue.parse(finalPayload);
+                if (o instanceof Map && ((Map) o).containsKey("error")) {
+                    Map error = (Map) ((Map) o).get("error");
+                    if ((int) error.get("code") == 401) {
+                        if (tokenValid) {
+                            try {
+                                tokenValid = false;
+                                tokenProvider.renewToken();
+                                reconnect();
+                            } catch (Throwable t) {
+                                exitOnError = true;
+                                onError(t);
+                            }
+                        } else {
+                            exitOnClose = true;
+                            doReconnect = false;
+                            if (dataListener != null) {
+                                process(dataListener, finalPayload);
+                            }
                         }
-                    } else {
-                        exitOnClose = true;
-                        doReconnect = false;
-                        process(dataListener, payload);
+                        return;
                     }
-                    return;
+                }
+
+                // Token is valid when no error 401 came in.
+                tokenValid = true;
+
+                if (dataListener != null) {
+                    process(dataListener, finalPayload);
                 }
             }
-
-            // Token is valid when no error 401 came in.
-            tokenValid = true;
-
-            process(dataListener, payload);
         }
 
         @Override
@@ -600,7 +617,9 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 m.put("message", "ping failed " + t.getMessage());
                 m.put("stack", stacktrace(t));
 
-                process(logListener, JSONValue.toJSONString(m));
+                if (logListener != null) {
+                    process(logListener, JSONValue.toJSONString(m));
+                }
             }
         }
     }
