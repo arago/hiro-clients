@@ -229,8 +229,8 @@ public class DefaultHiroClient implements HiroClient {
     @Override
     public Map apiVersion() {
         Map<String, String> params = HiroCollections.newMap();
-        String result = restClient
-                .get(StringUtils.join(HiroCollections.newList(API_HELP_PREFIX, URL_PATH_VERSION), "/"), params);
+        String result = restClient.get(StringUtils.join(HiroCollections.newList(API_PREFIX, URL_PATH_VERSION), "/"),
+                params);
         return Helper.parseJsonBody(result);
     }
 
