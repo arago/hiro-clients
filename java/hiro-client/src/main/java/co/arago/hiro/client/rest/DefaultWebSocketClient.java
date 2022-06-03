@@ -49,6 +49,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     private final String urlParameters;
     private final WebSocketListener handler;
 
+    private final List<String> subscribeScopeIds = new CopyOnWriteArrayList<>();
     private final Map<String, Map> eventFilterMessages = new ConcurrentHashMap<>();
 
     /**
@@ -109,6 +110,24 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 LOG.log(Level.FINEST, "connected " + this);
             }
 
+            try {
+                if (type == WebsocketType.Event) {
+                    for (String scopeId : subscribeScopeIds) {
+                        String message = getSubscribeScopeMessage(scopeId);
+                        LOG.log(Level.INFO, "Subscribe to scopeId: " + message);
+                        websocket.sendTextFrame(message).get(timeout, TimeUnit.MILLISECONDS);
+                    }
+
+                    for (Map filter : eventFilterMessages.values()) {
+                        String message = getEventRegisterMessage(filter);
+                        LOG.log(Level.INFO, "Send filter: " + message);
+                        websocket.sendTextFrame(message).get(timeout, TimeUnit.MILLISECONDS);
+                    }
+                }
+            } catch (Throwable ex) {
+                Throwables.unchecked(ex);
+            }
+
             if (handler != null) {
                 handler.onOpen(websocket);
             }
@@ -116,6 +135,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
             if (logListener != null) {
                 process(logListener, JSONValue.toJSONString(m));
             }
+            running = true;
+
             doReconnect = true;
             tokenValid = false;
             exitOnClose = false;
@@ -268,7 +289,7 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
     public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider,
             AsyncHttpClient client, Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
-            Listener<String> logListener, WebSocketListener handler, List<Map> eventFilterMessages)
+            Listener<String> logListener, WebSocketListener handler, List<Map> eventFilterMessages, List<String> subscribeScopeIds)
             throws InterruptedException, ExecutionException, URISyntaxException {
 
         if (debugLevel != null) {
@@ -284,6 +305,10 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         this.type = type;
         this.urlParameters = urlParameters;
         this.handler = handler;
+
+        if (subscribeScopeIds != null) {
+            this.subscribeScopeIds.addAll(subscribeScopeIds);
+        }
 
         if (eventFilterMessages != null) {
             for (Map filter : eventFilterMessages) {
@@ -316,15 +341,6 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 throw new HiroException("Failed to initialize WebSocketClient. It is null.", 500);
             }
 
-            if (type == WebsocketType.Event) {
-                for (Map filter : eventFilterMessages.values()) {
-                    String message = getEventRegisterMessage(filter);
-                    LOG.log(Level.INFO, "Send filter: " + message);
-                    webSocketClient.sendTextFrame(message).get(timeout, TimeUnit.MILLISECONDS);
-                }
-            }
-
-            running = true;
         } catch (Throwable ex) {
             closeWs();
 
@@ -332,7 +348,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
                 LOG.log(Level.FINEST, "connection failed " + this, ex);
             }
 
-            throw new HiroException("connection failed " + this + " " + ex.getMessage(), 400, ex);
+            throw new HiroException("connection failed " + this + " " + ((ex instanceof TimeoutException)
+                    ? "timeout of " + String.valueOf(timeout) + "ms reached" : ex.getMessage()), 400, ex);
         }
 
         if (LOG.isLoggable(Level.FINEST)) {
@@ -464,6 +481,16 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         return message;
     }
 
+    private String getSubscribeScopeMessage(String scopeId) {
+        final Map m = HiroCollections.newMap();
+        m.put("type", "subscribe");
+        m.put("id", scopeId);
+
+        String message = JSONValue.toJSONString(m);
+
+        return message;
+    }
+
     @Override
     public synchronized void removeEventFilter(String id) {
         final Map m = HiroCollections.newMap();
@@ -491,6 +518,24 @@ public final class DefaultWebSocketClient implements WebSocketClient {
         sendMessage(message);
 
         eventFilterMessages.clear();
+    }
+
+    @Override
+    public void subscribeScope(String scopeId) {
+        String message = getSubscribeScopeMessage(scopeId);
+        LOG.log(Level.INFO, "Subscribe to scopeId: " + message);
+        sendMessage(message);
+
+        subscribeScopeIds.add(scopeId);
+    }
+
+    /**
+     * This only removes the scope from the internal list since there is no 'unsubscribe'. You need to
+     * restart the websocket for this change to take effect.
+     */
+    @Override
+    public void removeScope(String scopeId) {
+        subscribeScopeIds.remove(scopeId);
     }
 
     @Override
