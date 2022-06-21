@@ -289,8 +289,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
 
     public DefaultWebSocketClient(String restApiUrl, String urlParameters, TokenProvider tokenProvider,
             AsyncHttpClient client, Level debugLevel, int timeout, WebsocketType type, Listener<String> dataListener,
-            Listener<String> logListener, WebSocketListener handler, List<Map> eventFilterMessages, List<String> subscribeScopeIds)
-            throws InterruptedException, ExecutionException, URISyntaxException {
+            Listener<String> logListener, WebSocketListener handler, List<Map> eventFilterMessages,
+            List<String> subscribeScopeIds) {
 
         if (debugLevel != null) {
             LOG.setLevel(debugLevel);
@@ -530,8 +530,8 @@ public final class DefaultWebSocketClient implements WebSocketClient {
     }
 
     /**
-     * This only removes the scope from the internal list since there is no 'unsubscribe'. You need to
-     * restart the websocket for this change to take effect.
+     * This only removes the scope from the internal list since there is no 'unsubscribe'. You need to restart the
+     * websocket for this change to take effect.
      */
     @Override
     public void removeScope(String scopeId) {
