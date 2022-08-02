@@ -17,6 +17,9 @@ validate: FORCE
 	mvn -q -DskipTests net.revelc.code.formatter:formatter-maven-plugin:validate
 	mvn -q clean install test
 
+deploy: FORCE
+	mvn deploy -DskipTests
+
 clean: FORCE
 	mvn -q clean
 
