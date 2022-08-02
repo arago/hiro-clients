@@ -143,19 +143,67 @@
         </plugins>
     </build>
 
-    <distributionManagement>
-        <repository>
+    <profiles>
+        <profile>
+            <id>github-repositories</id>
+            <activation>
+                <property>
+                    <name>!useRepo</name>
+                </property>
+            </activation>
+            <distributionManagement>
+                <repository>
+                    <id>github</id>
+                    <uniqueVersion>false</uniqueVersion>
+                    <name>arago GitHub Maven Repository</name>
+                    <url>https://maven.pkg.github.com/arago/repository-public</url>
+                </repository>
+                <snapshotRepository>
+                    <id>github</id>
+                    <uniqueVersion>false</uniqueVersion>
+                    <name>arago GitHub Maven Repository</name>
+                    <url>https://maven.pkg.github.com/arago/repository-public</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+        <profile>
+            <id>global-repository</id>
+            <activation>
+                <property>
+                    <name>useRepo</name>
+                    <value>global</value>
+                </property>
+            </activation>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+        <profile>
             <id>arago-private</id>
-            <uniqueVersion>false</uniqueVersion>
-            <name>arago Repository</name>
-            <url>https://nexus.arago.co/repository/arago-private</url>
-        </repository>
-        <snapshotRepository>
-            <id>arago-private</id>
-            <uniqueVersion>false</uniqueVersion>
-            <name>arago Repository</name>
-            <url>https://nexus.arago.co/repository/arago-private</url>
-        </snapshotRepository>
-    </distributionManagement>
+            <activation>
+                <property>
+                    <name>useRepo</name>
+                    <value>aragoPrivate</value>
+                </property>
+            </activation>
+            <distributionManagement>
+                <repository>
+                    <id>arago-private</id>
+                    <uniqueVersion>false</uniqueVersion>
+                </repository>
+                <snapshotRepository>
+                    <id>arago-private</id>
+                    <uniqueVersion>false</uniqueVersion>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+    </profiles>
 
 </project>
