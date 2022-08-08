@@ -31,6 +31,7 @@ public class ClientBuilder {
     protected int timeout = 0; // msecs
     protected String apiVersion = null; // enforce /api/<vers>/graph
     protected List<Map> eventFilterMessages;
+    protected List<String> subscribeScopeIds;
     protected ProxyServer.Builder proxyBuilder;
 
     public enum WebsocketType {
@@ -93,6 +94,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder setSubscribeScopeIds(List<String> subscribeScopeIds) {
+        this.subscribeScopeIds = subscribeScopeIds;
+        return this;
+    }
+
     public HiroClient makeHiroClient() {
         return new DefaultHiroClient(notEmpty(restApiUrl, "restApiUrl"), notNull(tokenProvider, "tokenProvider"),
                 client, trustAllCerts, debugLevel, timeout, apiVersion, proxyBuilder);
@@ -120,7 +126,7 @@ public class ClientBuilder {
 
         try {
             return new DefaultWebSocketClient(restApiUrl, urlParameters, tokenProvider, client, debugLevel, timeout,
-                    type, dataListener, logListener, handler, eventFilterMessages);
+                    type, dataListener, logListener, handler, eventFilterMessages, subscribeScopeIds);
         } catch (Throwable ex) {
             return Throwables.unchecked(ex);
         }

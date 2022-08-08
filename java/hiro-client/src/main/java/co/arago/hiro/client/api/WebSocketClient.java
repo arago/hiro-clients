@@ -21,4 +21,8 @@ public interface WebSocketClient extends Closeable {
     void removeEventFilter(String id);
 
     void clearEventFilters();
+
+    void subscribeScope(String scopeId);
+
+    void removeScope(String scopeId);
 }
