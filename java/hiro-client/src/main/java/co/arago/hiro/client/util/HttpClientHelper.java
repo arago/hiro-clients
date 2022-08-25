@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 public final class HttpClientHelper {
     private static final String USERAGENT = "co.arago.hiro.client/" + VersionHelper.version();
     private static final int DEFAULT_WEB_SOCKET_MAX_FRAME_SIZE = 10485760;
-    public static Level HTTP_DEBUG_LEVEL = Level.FINEST;
 
     private static AsyncHttpClient _newClient(boolean trustAllCerts, int timeout, ProxyServer.Builder proxyBuilder,
             int webSocketMaxFrame) {
@@ -107,7 +106,7 @@ public final class HttpClientHelper {
             sb.append("  Body=[");
             sb.append(req.getStringData());
             sb.append("]\n]");
-            logger.log(HTTP_DEBUG_LEVEL, sb.toString());
+            logger.log(level, sb.toString());
         }
     }
 
@@ -137,7 +136,7 @@ public final class HttpClientHelper {
                 sb.append("]\n");
             }
             sb.append("]");
-            logger.log(HTTP_DEBUG_LEVEL, sb.toString());
+            logger.log(level, sb.toString());
         }
     }
 
