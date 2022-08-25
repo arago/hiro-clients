@@ -71,7 +71,6 @@ public class AuthenticatedRestClient implements RestClient {
         this.clientIsProvided = client != null;
         this.client = client == null ? HttpClientHelper.newClient(trustAllCerts, this.timeout, proxyBuilder) : client;
         this.debugRestLevel = debugLevel != null ? debugLevel : Level.OFF;
-        LOG.setLevel(this.debugRestLevel);
         this.tokenProvider = notNull(tokenProvider, "tokenProvider");
         if (apiPath != null && !apiPath.isEmpty()) {
             this.apiPath = apiPath;
